@@ -146,9 +146,9 @@ export default function LoginPage() {
                 </Button>
 
                 <div className="text-xs text-muted-foreground text-center mt-4 space-y-1">
-                  <p className="font-semibold text-foreground/80">Demo Accounts:</p>
+                  <p className="font-semibold text-foreground/80">Demo Account:</p>
                   <p>👤 User: musiclover1@email.com / Demo123!</p>
-                  <p>👑 Admin: admin@email.com / Admin123!</p>
+                  <p className="text-[10px] mt-2">Admin account must be created via signup</p>
                 </div>
               </form>
             </TabsContent>
