@@ -13,20 +13,11 @@ export default function Feed() {
   const [snippets, setSnippets] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [interactions, setInteractions] = useState<Map<string, any>>(new Map());
+  const [isLoading, setIsLoading] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Check authentication
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/login");
-      } else {
-        setUser(session.user);
-        fetchSnippets();
-        fetchInteractions(session.user.id);
-      }
-    });
-
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate("/login");
@@ -35,34 +26,51 @@ export default function Feed() {
       }
     });
 
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/login");
+      } else {
+        setUser(session.user);
+        // Defer data fetching
+        setTimeout(() => {
+          fetchSnippets();
+          fetchInteractions(session.user.id);
+        }, 0);
+      }
+    });
+
     return () => subscription.unsubscribe();
   }, [navigate]);
 
   const fetchSnippets = async () => {
-    const { data, error } = await supabase
-      .from("snippets")
-      .select(`
-        *,
-        artist_profiles!inner (
-          artist_name,
-          user_id
-        )
-      `)
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(20);
+    try {
+      const { data, error } = await supabase
+        .from("snippets")
+        .select(`
+          *,
+          artist_profiles!inner (
+            artist_name,
+            user_id
+          )
+        `)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(20);
 
-    if (error) {
+      if (error) throw error;
+
+      const formattedSnippets = data?.map((snippet: any) => ({
+        ...snippet,
+        artist_name: snippet.artist_profiles.artist_name,
+      })) || [];
+
+      setSnippets(formattedSnippets);
+    } catch (error) {
       toast.error("Failed to load snippets");
-      return;
+    } finally {
+      setIsLoading(false);
     }
-
-    const formattedSnippets = data?.map((snippet: any) => ({
-      ...snippet,
-      artist_name: snippet.artist_profiles.artist_name,
-    })) || [];
-
-    setSnippets(formattedSnippets);
   };
 
   const fetchInteractions = async (userId: string) => {
@@ -176,12 +184,29 @@ export default function Feed() {
     navigate("/login");
   };
 
-  if (snippets.length === 0) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <img src={logo} alt="BeatSeek" className="w-24 h-24 mx-auto animate-pulse-glow" />
           <p className="text-muted-foreground">Loading amazing tracks...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (snippets.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <img src={logo} alt="BeatSeek" className="w-24 h-24 mx-auto" />
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold gradient-text">No tracks yet!</h2>
+            <p className="text-muted-foreground">Be the first to upload some music</p>
+          </div>
+          <Button onClick={handleLogout} variant="outline">
+            Logout
+          </Button>
         </div>
       </div>
     );
