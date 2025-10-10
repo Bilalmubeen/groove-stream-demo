@@ -43,7 +43,7 @@ export function GlobalUploadCTA() {
       <Button
         variant="gradient"
         size="icon"
-        onClick={() => navigate('/upload')}
+        onClick={() => navigate('/profile')}
         className={cn(
           "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-2xl z-50",
           "md:hidden",
@@ -57,7 +57,7 @@ export function GlobalUploadCTA() {
       {/* Desktop: Top Nav Button */}
       <Button
         variant="gradient"
-        onClick={() => navigate('/upload')}
+        onClick={() => navigate('/profile')}
         className={cn(
           "hidden md:flex fixed top-6 right-6 z-50",
           "hover:scale-105 active:scale-100"

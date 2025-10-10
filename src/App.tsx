@@ -12,6 +12,7 @@ import Privacy from "./pages/Privacy";
 import Upload from "./pages/Upload";
 import { AudioProvider } from "./contexts/AudioContext";
 import { GlobalUploadCTA } from "./components/Upload/GlobalUploadCTA";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,8 @@ const App = () => (
             <Route path="/" element={<Feed />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/upload" element={<Upload />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/u/:handle" element={<Profile />} />
             <Route path="/welcome" element={<Index />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
