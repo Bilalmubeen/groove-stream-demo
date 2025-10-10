@@ -116,7 +116,7 @@ export default function Profile() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate(-1)}
+            onClick={() => navigate('/')}
             className="mb-4 hover:bg-muted"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
