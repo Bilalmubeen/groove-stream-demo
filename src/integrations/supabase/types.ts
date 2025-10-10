@@ -65,6 +65,38 @@ export type Database = {
           },
         ]
       }
+      engagement_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          snippet_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          snippet_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          snippet_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_events_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string
@@ -147,6 +179,7 @@ export type Database = {
           id: string
           likes: number
           rejection_reason: string | null
+          search_vector: unknown | null
           shares: number
           status: Database["public"]["Enums"]["snippet_status"]
           tags: string[] | null
@@ -165,6 +198,7 @@ export type Database = {
           id?: string
           likes?: number
           rejection_reason?: string | null
+          search_vector?: unknown | null
           shares?: number
           status?: Database["public"]["Enums"]["snippet_status"]
           tags?: string[] | null
@@ -183,6 +217,7 @@ export type Database = {
           id?: string
           likes?: number
           rejection_reason?: string | null
+          search_vector?: unknown | null
           shares?: number
           status?: Database["public"]["Enums"]["snippet_status"]
           tags?: string[] | null
@@ -319,6 +354,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_trending_score: {
+        Args: { snippet_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

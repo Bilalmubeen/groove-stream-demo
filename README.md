@@ -1,73 +1,187 @@
-# Welcome to your Lovable project
+# BeatSeek - Music Discovery Platform
 
-## Project info
+BeatSeek is a modern music discovery platform where artists can share 30-second snippets of their tracks and listeners can discover new music through an engaging, swipeable feed interface.
 
-**URL**: https://lovable.dev/projects/ab79fa62-69c2-4014-b0eb-e671608bc63e
+## Features
 
-## How can I edit this code?
+- 🎵 **30-Second Snippets**: Artists share bite-sized previews of their tracks
+- 📱 **Swipeable Feed**: TikTok-style vertical scrolling interface
+- 👤 **Role-Based Access**: Listener, Artist, and Admin roles
+- 🔥 **Trending Algorithm**: Time-decayed engagement scoring
+- 🔍 **Search & Filters**: Full-text search and genre filtering
+- ♥️ **Engagement Tracking**: Likes, saves, plays, and completion tracking
+- 🎨 **Modern UI**: Beautiful, responsive design with dark mode support
+- 🔒 **Secure**: Row-level security and validated uploads
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- **Frontend**: React 18, TypeScript, Vite
+- **Styling**: Tailwind CSS, shadcn/ui components
+- **Backend**: Lovable Cloud (Supabase)
+- **Database**: PostgreSQL with RLS
+- **Storage**: Supabase Storage for audio and images
+- **Authentication**: Supabase Auth
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ab79fa62-69c2-4014-b0eb-e671608bc63e) and start prompting.
+## Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- Node.js 18+ or Bun
+- A Lovable Cloud account (or Supabase project)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Installation
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. **Clone the repository**
+   ```bash
+   git clone <YOUR_GIT_URL>
+   cd beatseek
+   ```
 
-Follow these steps:
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   bun install
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. **Set up environment variables**
+   
+   Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   The environment variables are automatically configured by Lovable Cloud. If using a custom Supabase project, update with your credentials.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+4. **Run the development server**
+   ```bash
+   npm run dev
+   # or
+   bun dev
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+   The app will be available at `http://localhost:8080`
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## Database Setup
+
+The database schema is managed through migrations in `supabase/migrations/`. 
+
+### Key Tables
+
+- `profiles` - User profile information
+- `user_roles` - Role-based access control
+- `artist_profiles` - Artist-specific information
+- `snippets` - Music snippet metadata
+- `user_snippet_interactions` - User engagement (likes, saves)
+- `engagement_events` - Detailed engagement tracking
+- `follows` - Artist following relationships
+- `reports` - Content moderation
+
+### Storage Buckets
+
+- `snippets` - Audio files (max 20MB, 30s duration)
+- `covers` - Cover art images
+- `avatars` - User profile pictures
+
+## User Roles
+
+### Listener (Default)
+- Browse and discover snippets
+- Like, save, and share tracks
+- Follow artists
+- Report inappropriate content
+
+### Artist
+- Upload 30-second snippets
+- Manage artist profile
+- View snippet analytics
+- All listener capabilities
+
+### Admin
+- Approve/reject snippet uploads
+- Review content reports
+- Moderate users
+- Access all analytics
+
+## Audio Upload Guidelines
+
+- **Format**: MP3, WAV, or M4A
+- **Duration**: Maximum 30 seconds
+- **File Size**: Maximum 20MB
+- **Quality**: Recommended 128-320kbps
+
+Files are validated both client-side and server-side.
+
+## Development
+
+### Project Structure
+
+```
+src/
+├── components/        # React components
+│   ├── Auth/         # Authentication components
+│   ├── Feed/         # Feed-related components
+│   └── ui/           # shadcn/ui components
+├── contexts/         # React contexts (Audio, etc.)
+├── hooks/            # Custom React hooks
+├── integrations/     # Supabase integration
+├── pages/            # Page components
+└── lib/              # Utility functions
+
+supabase/
+├── functions/        # Edge functions
+└── migrations/       # Database migrations
 ```
 
-**Edit a file directly in GitHub**
+### Code Quality
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **Linting**: ESLint with TypeScript support
+- **Formatting**: Prettier
+- **Type Safety**: TypeScript strict mode
+- **Testing**: Playwright for E2E tests
 
-**Use GitHub Codespaces**
+Run quality checks:
+```bash
+npm run lint
+npm run typecheck
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Deployment
 
-## What technologies are used for this project?
+This project is optimized for deployment on Lovable:
 
-This project is built with:
+1. Click "Publish" in the Lovable interface
+2. Your app will be deployed to `yourapp.lovable.app`
+3. Configure custom domains in Project Settings
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Security
 
-## How can I deploy this project?
+- All tables use Row-Level Security (RLS)
+- Authentication required for sensitive operations
+- Storage buckets have strict access policies
+- Input validation on all uploads
+- Content reporting system for moderation
 
-Simply open [Lovable](https://lovable.dev/projects/ab79fa62-69c2-4014-b0eb-e671608bc63e) and click on Share -> Publish.
+## Accessibility
 
-## Can I connect a custom domain to my Lovable project?
+- Keyboard navigation support (↑/↓, Space, L)
+- ARIA labels on all interactive elements
+- Focus indicators
+- Respects `prefers-reduced-motion`
+- Color contrast compliance
 
-Yes, you can!
+## License
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Support
+
+For issues and questions:
+- Lovable Project: https://lovable.dev/projects/ab79fa62-69c2-4014-b0eb-e671608bc63e
+- GitHub Issues: [Your repo issues]
+
+## Acknowledgments
+
+- Built with [Lovable](https://lovable.dev)
+- UI components from [shadcn/ui](https://ui.shadcn.com)
+- Icons from [Lucide](https://lucide.dev)

@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Heart, Share2, Bookmark, Play, Pause, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useEngagement } from "@/hooks/useEngagement";
 
 interface SnippetCardProps {
   snippet: {
@@ -31,17 +32,86 @@ export function SnippetCard({
   isSaved,
 }: SnippetCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [hasTracked3s, setHasTracked3s] = useState(false);
+  const [hasTrackedComplete, setHasTrackedComplete] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { trackEvent } = useEngagement();
+  const playStartTime = useRef<number>(0);
 
+  // Intersection Observer for viewport visibility
   useEffect(() => {
-    if (isActive && audioRef.current) {
-      audioRef.current.play();
-      setIsPlaying(true);
-    } else if (!isActive && audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    }
-  }, [isActive]);
+    if (!cardRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && isActive) {
+          audioRef.current?.play();
+          setIsPlaying(true);
+          trackEvent(snippet.id, 'play_start');
+          playStartTime.current = Date.now();
+        } else {
+          audioRef.current?.pause();
+          setIsPlaying(false);
+        }
+      },
+      { threshold: 0.5 }
+    );
+
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [isActive, snippet.id, trackEvent]);
+
+  // Tab blur detection
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Track engagement events
+  useEffect(() => {
+    if (!audioRef.current) return;
+
+    const audio = audioRef.current;
+
+    const handleTimeUpdate = () => {
+      const currentTime = audio.currentTime;
+      
+      // Track 3-second retention
+      if (currentTime >= 3 && !hasTracked3s) {
+        trackEvent(snippet.id, 'play_3s');
+        setHasTracked3s(true);
+      }
+    };
+
+    const handleEnded = () => {
+      if (!hasTrackedComplete) {
+        trackEvent(snippet.id, 'play_complete');
+        setHasTrackedComplete(true);
+      }
+      
+      // Track replay if user replays
+      if (hasTrackedComplete) {
+        trackEvent(snippet.id, 'replay');
+      }
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [snippet.id, hasTracked3s, hasTrackedComplete, trackEvent]);
 
   const togglePlayPause = () => {
     if (audioRef.current) {
@@ -55,7 +125,10 @@ export function SnippetCard({
   };
 
   return (
-    <div className="relative h-screen w-full snap-start snap-always flex items-center justify-center bg-gradient-to-br from-background via-card to-background">
+    <div 
+      ref={cardRef}
+      className="relative h-screen w-full snap-start snap-always flex items-center justify-center bg-gradient-to-br from-background via-card to-background"
+    >
       {/* Background gradient glow */}
       <div 
         className="absolute inset-0 opacity-20"

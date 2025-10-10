@@ -1,11 +1,13 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SnippetCard } from "@/components/Feed/SnippetCard";
+import { SearchBar } from "@/components/Feed/SearchBar";
 import { toast } from "sonner";
-import { User, Menu, LogOut } from "lucide-react";
+import { User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/beatseek-logo.png";
+import { useEngagement } from "@/hooks/useEngagement";
 
 export default function Feed() {
   const navigate = useNavigate();
@@ -14,7 +16,10 @@ export default function Feed() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [interactions, setInteractions] = useState<Map<string, any>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState("all");
   const containerRef = useRef<HTMLDivElement>(null);
+  const { trackEvent } = useEngagement();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -45,7 +50,7 @@ export default function Feed() {
 
   const fetchSnippets = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from("snippets")
         .select(`
           *,
@@ -54,7 +59,22 @@ export default function Feed() {
             user_id
           )
         `)
-        .eq("status", "approved")
+        .eq("status", "approved");
+
+      // Apply genre filter
+      if (selectedGenre !== "all") {
+        query = query.eq("genre", selectedGenre as any);
+      }
+
+      // Apply search filter
+      if (searchQuery.trim()) {
+        query = query.textSearch("search_vector", searchQuery.trim(), {
+          type: "websearch",
+          config: "english",
+        });
+      }
+
+      const { data, error } = await query
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -96,6 +116,52 @@ export default function Feed() {
     setCurrentIndex(index);
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!containerRef.current) return;
+
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          containerRef.current.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          containerRef.current.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+          break;
+        case ' ':
+          e.preventDefault();
+          // Toggle play/pause on current snippet
+          const currentSnippet = snippets[currentIndex];
+          if (currentSnippet) {
+            const audioElements = document.querySelectorAll('audio');
+            audioElements[currentIndex]?.paused 
+              ? audioElements[currentIndex]?.play()
+              : audioElements[currentIndex]?.pause();
+          }
+          break;
+        case 'l':
+        case 'L':
+          e.preventDefault();
+          const snippet = snippets[currentIndex];
+          if (snippet) handleLike(snippet.id);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, snippets]);
+
+  // Refresh snippets when filters change
+  useEffect(() => {
+    if (user) {
+      setIsLoading(true);
+      fetchSnippets();
+    }
+  }, [searchQuery, selectedGenre]);
+
   const handleLike = async (snippetId: string) => {
     if (!user) return;
 
@@ -130,6 +196,11 @@ export default function Feed() {
       ));
 
       toast.success(newLikedState ? "Added to likes!" : "Removed from likes");
+      
+      // Track engagement
+      if (newLikedState) {
+        trackEvent(snippetId, 'like');
+      }
     } catch (error) {
       toast.error("Failed to update like");
     }
@@ -161,12 +232,19 @@ export default function Feed() {
       setInteractions(newInteractions);
 
       toast.success(newSavedState ? "Saved to library!" : "Removed from library");
+      
+      // Track engagement
+      if (newSavedState) {
+        trackEvent(snippetId, 'save');
+      }
     } catch (error) {
       toast.error("Failed to save");
     }
   };
 
   const handleShare = (snippet: any) => {
+    trackEvent(snippet.id, 'share');
+    
     if (navigator.share) {
       navigator.share({
         title: snippet.title,
@@ -216,6 +294,12 @@ export default function Feed() {
     <div className="relative h-screen overflow-hidden">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedGenre={selectedGenre}
+          onGenreChange={setSelectedGenre}
+        />
         <div className="flex items-center justify-between p-4 max-w-7xl mx-auto">
           <img src={logo} alt="BeatSeek" className="w-10 h-10" />
           <h1 className="text-xl font-bold gradient-text">BeatSeek</h1>
