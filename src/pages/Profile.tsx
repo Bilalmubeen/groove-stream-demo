@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileHeader } from '@/components/Profile/ProfileHeader';
 import { SnippetsGrid } from '@/components/Profile/SnippetsGrid';
 import { UploadDialog } from '@/components/Profile/UploadDialog';
 import { EditProfileDialog } from '@/components/Profile/EditProfileDialog';
-import { Music } from 'lucide-react';
+import { Music, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function Profile() {
   const { handle } = useParams();
+  const navigate = useNavigate();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
@@ -110,6 +112,17 @@ export default function Profile() {
       <div className="relative">
         <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
         <div className="relative max-w-5xl mx-auto px-4 pt-8 pb-6">
+          {/* Back Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="mb-4 hover:bg-muted"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+
           <ProfileHeader
             userId={profileUserId!}
             isOwnProfile={isOwnProfile}
