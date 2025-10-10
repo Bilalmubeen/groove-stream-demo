@@ -11,6 +11,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Upload from "./pages/Upload";
 import { AudioProvider } from "./contexts/AudioContext";
+import { GlobalUploadCTA } from "./components/Upload/GlobalUploadCTA";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <GlobalUploadCTA />
           <Routes>
             <Route path="/" element={<Feed />} />
             <Route path="/login" element={<LoginPage />} />

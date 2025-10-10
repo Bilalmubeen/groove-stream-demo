@@ -7,7 +7,23 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
-import { Upload as UploadIcon, Image as ImageIcon, Music } from 'lucide-react';
+import { Upload as UploadIcon, Image as ImageIcon, Music, Loader2, X, RotateCcw } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ValidationErrors {
   title?: string;
@@ -25,6 +41,9 @@ export default function Upload() {
   const [errors, setErrors] = useState<ValidationErrors>({});
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [uploadAbortController, setUploadAbortController] = useState<AbortController | null>(null);
   
   const audioInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -165,6 +184,10 @@ export default function Upload() {
     setIsUploading(true);
     setUploadProgress(0);
 
+    // Create abort controller for cancellation
+    const abortController = new AbortController();
+    setUploadAbortController(abortController);
+
     try {
       // Get auth token
       const { data: { session } } = await supabase.auth.getSession();
@@ -183,49 +206,84 @@ export default function Upload() {
         setUploadProgress(prev => Math.min(prev + 10, 90));
       }, 200);
 
-      // Call upload endpoint
-      const response = await supabase.functions.invoke('upload-snippet', {
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
+      // Call upload endpoint with abort signal
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-snippet`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: formData,
+          signal: abortController.signal,
+        }
+      );
 
       clearInterval(progressInterval);
-      setUploadProgress(100);
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Upload failed');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
 
-      const result = response.data;
+      const result = await response.json();
+      setUploadProgress(100);
 
       if (!result.ok) {
         throw new Error(result.error || 'Upload failed');
       }
 
+      // Announce success to screen readers
+      const announcement = document.createElement('div');
+      announcement.setAttribute('role', 'status');
+      announcement.setAttribute('aria-live', 'polite');
+      announcement.className = 'sr-only';
+      announcement.textContent = 'Upload complete';
+      document.body.appendChild(announcement);
+      setTimeout(() => document.body.removeChild(announcement), 1000);
+
       toast({
-        title: 'Upload Successful!',
-        description: `"${result.title}" has been uploaded and is now live in the feed.`,
+        title: 'Snippet uploaded successfully!',
+        description: `"${result.title}" is now live in the feed.`,
+        action: (
+          <Button variant="outline" size="sm" onClick={() => navigate('/feed')}>
+            View in Feed
+          </Button>
+        ),
       });
 
-      // Navigate to feed
-      navigate('/feed');
+      // Navigate to feed after a short delay
+      setTimeout(() => navigate('/feed'), 1500);
 
     } catch (error: any) {
-      console.error('Upload error:', error);
-      toast({
-        title: 'Upload Failed',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      });
+      if (error.name === 'AbortError') {
+        toast({
+          title: 'Upload Cancelled',
+          description: 'Your upload has been cancelled.',
+        });
+      } else {
+        console.error('Upload error:', error);
+        toast({
+          title: 'Upload Failed',
+          description: error.message || 'An unexpected error occurred',
+          variant: 'destructive',
+        });
+      }
       setUploadProgress(0);
     } finally {
       setIsUploading(false);
+      setUploadAbortController(null);
     }
   };
 
-  const handleReset = () => {
+  const handleCancelUpload = () => {
+    if (uploadAbortController) {
+      uploadAbortController.abort();
+      setShowCancelDialog(false);
+    }
+  };
+
+  const handleResetConfirm = () => {
     setTitle('');
     setAudioFile(null);
     setCoverFile(null);
@@ -235,6 +293,22 @@ export default function Upload() {
     setUploadProgress(0);
     if (audioInputRef.current) audioInputRef.current.value = '';
     if (coverInputRef.current) coverInputRef.current.value = '';
+    setShowResetDialog(false);
+    
+    toast({
+      title: 'Form Reset',
+      description: 'All fields have been cleared.',
+    });
+  };
+
+  const getUploadButtonTooltip = () => {
+    if (!title.trim()) return 'Enter a title to continue';
+    if (!audioFile) return 'Select a 30-second MP3 to continue';
+    if (!coverFile) return 'Select a cover image to continue';
+    if (errors.title) return errors.title;
+    if (errors.audio) return errors.audio;
+    if (errors.coverImage) return errors.coverImage;
+    return 'Click to upload your snippet';
   };
 
   return (
@@ -382,25 +456,102 @@ export default function Upload() {
 
               {/* Action Buttons */}
               <div className="flex gap-3">
-                <Button
-                  type="submit"
-                  disabled={!isFormValid() || isUploading}
-                  className="flex-1"
-                >
-                  {isUploading ? 'Uploading...' : 'Upload Snippet'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleReset}
-                  disabled={isUploading}
-                >
-                  Reset
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex-1">
+                        <Button
+                          type="submit"
+                          disabled={!isFormValid() || isUploading}
+                          className="w-full"
+                          variant="gradient"
+                          aria-label="Upload snippet"
+                          aria-disabled={!isFormValid() || isUploading}
+                        >
+                          {isUploading ? (
+                            <>
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                              Uploading...
+                            </>
+                          ) : (
+                            <>
+                              <UploadIcon className="w-4 h-4" />
+                              Upload Snippet
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </TooltipTrigger>
+                    {(!isFormValid() || isUploading) && (
+                      <TooltipContent>
+                        <p>{getUploadButtonTooltip()}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+
+                {isUploading ? (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => setShowCancelDialog(true)}
+                    aria-label="Cancel upload"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowResetDialog(true)}
+                    disabled={!title && !audioFile && !coverFile}
+                    aria-label="Reset form"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Reset
+                  </Button>
+                )}
               </div>
             </form>
           </CardContent>
         </Card>
+
+        {/* Cancel Upload Confirmation Dialog */}
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Cancel current upload?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will stop the upload process. Your files will remain selected in the form.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>No, continue upload</AlertDialogCancel>
+              <AlertDialogAction onClick={handleCancelUpload} className="bg-destructive hover:bg-destructive/90">
+                Yes, cancel upload
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Reset Form Confirmation Dialog */}
+        <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reset all fields?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will clear all your inputs, including selected files and the image preview.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>No, keep my work</AlertDialogCancel>
+              <AlertDialogAction onClick={handleResetConfirm}>
+                Yes, reset everything
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
