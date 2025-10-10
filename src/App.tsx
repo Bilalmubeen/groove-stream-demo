@@ -9,6 +9,7 @@ import LoginPage from "./components/Auth/LoginPage";
 import Feed from "./pages/Feed";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import Upload from "./pages/Upload";
 import { AudioProvider } from "./contexts/AudioContext";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Feed />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/upload" element={<Upload />} />
             <Route path="/welcome" element={<Index />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
