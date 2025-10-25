@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Heart, Share2, Bookmark, Play, Pause, Music } from "lucide-react";
+import { Heart, Share2, Bookmark, Play, Pause, Music, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEngagement } from "@/hooks/useEngagement";
+import { useAudio } from "@/contexts/AudioContext";
 
 interface SnippetCardProps {
   snippet: {
@@ -13,6 +14,8 @@ interface SnippetCardProps {
     audio_url: string;
     likes: number;
     genre: string;
+    cta_type?: string;
+    cta_url?: string;
   };
   isActive: boolean;
   onLike: () => void;
@@ -31,15 +34,15 @@ export function SnippetCard({
   isLiked,
   isSaved,
 }: SnippetCardProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
   const [hasTracked3s, setHasTracked3s] = useState(false);
   const [hasTrackedComplete, setHasTrackedComplete] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const { trackEvent } = useEngagement();
-  const playStartTime = useRef<number>(0);
+  const { play, pause, isPlaying: isAudioPlaying, currentlyPlaying } = useAudio();
+  
+  const isPlaying = isAudioPlaying(snippet.id);
 
-  // Intersection Observer for viewport visibility
+  // Auto-play when card becomes active and visible
   useEffect(() => {
     if (!cardRef.current) return;
 
@@ -47,13 +50,10 @@ export function SnippetCard({
       (entries) => {
         const entry = entries[0];
         if (entry.isIntersecting && isActive) {
-          audioRef.current?.play();
-          setIsPlaying(true);
+          play(snippet.id, snippet.audio_url);
           trackEvent(snippet.id, 'play_start');
-          playStartTime.current = Date.now();
-        } else {
-          audioRef.current?.pause();
-          setIsPlaying(false);
+        } else if (currentlyPlaying === snippet.id) {
+          pause();
         }
       },
       { threshold: 0.5 }
@@ -61,68 +61,30 @@ export function SnippetCard({
 
     observer.observe(cardRef.current);
     return () => observer.disconnect();
-  }, [isActive, snippet.id, trackEvent]);
+  }, [isActive, snippet.id, snippet.audio_url, currentlyPlaying]);
 
-  // Tab blur detection
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && audioRef.current) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
-
-  // Track engagement events
-  useEffect(() => {
-    if (!audioRef.current) return;
-
-    const audio = audioRef.current;
-
-    const handleTimeUpdate = () => {
-      const currentTime = audio.currentTime;
-      
-      // Track 3-second retention
-      if (currentTime >= 3 && !hasTracked3s) {
-        trackEvent(snippet.id, 'play_3s');
-        setHasTracked3s(true);
-      }
-    };
-
-    const handleEnded = () => {
-      if (!hasTrackedComplete) {
-        trackEvent(snippet.id, 'complete');
-        setHasTrackedComplete(true);
-      }
-      
-      // Track replay if user replays
-      if (hasTrackedComplete) {
-        trackEvent(snippet.id, 'replay');
-      }
-    };
-
-    audio.addEventListener('timeupdate', handleTimeUpdate);
-    audio.addEventListener('ended', handleEnded);
-
-    return () => {
-      audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.removeEventListener('ended', handleEnded);
-    };
-  }, [snippet.id, hasTracked3s, hasTrackedComplete, trackEvent]);
-
-  const togglePlayPause = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+  const togglePlayPause = useCallback(() => {
+    if (isPlaying) {
+      pause();
+    } else {
+      play(snippet.id, snippet.audio_url);
     }
-  };
+  }, [isPlaying, snippet.id, snippet.audio_url]);
+
+  const handleCTAClick = useCallback(() => {
+    if (snippet.cta_url) {
+      trackEvent(snippet.id, 'cta_click');
+      window.open(snippet.cta_url, '_blank', 'noopener,noreferrer');
+    }
+  }, [snippet.id, snippet.cta_url]);
+
+  const ctaLabel = {
+    'full_track': 'Listen to Full Track',
+    'presave': 'Pre-Save',
+    'merch': 'Shop Merch',
+    'custom': 'Learn More'
+  }[snippet.cta_type || 'custom'] || 'Learn More';
+
 
   return (
     <div 
@@ -184,11 +146,25 @@ export function SnippetCard({
           </span>
         </div>
 
+        {/* CTA Button */}
+        {snippet.cta_type && snippet.cta_url && (
+          <Button
+            onClick={handleCTAClick}
+            className="mb-6 gap-2"
+            size="lg"
+            aria-label={ctaLabel}
+          >
+            <ExternalLink className="w-4 h-4" />
+            {ctaLabel}
+          </Button>
+        )}
+
         {/* Action Buttons */}
         <div className="flex items-center gap-8">
           <button
             onClick={onLike}
             className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
+            aria-label={isLiked ? "Unlike" : "Like"}
           >
             <div className={cn(
               "w-14 h-14 rounded-full flex items-center justify-center glass transition-colors",
@@ -209,6 +185,7 @@ export function SnippetCard({
           <button
             onClick={onSave}
             className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
+            aria-label={isSaved ? "Unsave" : "Save"}
           >
             <div className={cn(
               "w-14 h-14 rounded-full flex items-center justify-center glass transition-colors",
@@ -227,6 +204,7 @@ export function SnippetCard({
           <button
             onClick={onShare}
             className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
+            aria-label="Share"
           >
             <div className="w-14 h-14 rounded-full flex items-center justify-center glass">
               <Share2 className="w-6 h-6" />
@@ -235,14 +213,6 @@ export function SnippetCard({
           </button>
         </div>
       </div>
-
-      {/* Hidden audio element */}
-      <audio 
-        ref={audioRef}
-        src={snippet.audio_url}
-        loop
-        preload="auto"
-      />
     </div>
   );
 }

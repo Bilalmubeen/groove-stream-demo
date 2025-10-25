@@ -142,6 +142,80 @@ export type Database = {
           },
         ]
       }
+      playlist_items: {
+        Row: {
+          created_at: string | null
+          playlist_id: string
+          position: number
+          snippet_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          playlist_id: string
+          position?: number
+          snippet_id: string
+        }
+        Update: {
+          created_at?: string | null
+          playlist_id?: string
+          position?: number
+          snippet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_items_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "playlist_items_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlists: {
+        Row: {
+          cover_path: string | null
+          created_at: string | null
+          creator_id: string | null
+          description: string | null
+          id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          cover_path?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          description?: string | null
+          id?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          cover_path?: string | null
+          created_at?: string | null
+          creator_id?: string | null
+          description?: string | null
+          id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlists_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
