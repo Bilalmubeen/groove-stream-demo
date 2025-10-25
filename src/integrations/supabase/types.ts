@@ -17,7 +17,11 @@ export type Database = {
       artist_profiles: {
         Row: {
           artist_name: string
+          banner_url: string | null
+          bio_links: Json | null
           created_at: string
+          dms_open: boolean | null
+          featured_snippet_id: string | null
           genres: Database["public"]["Enums"]["music_genre"][]
           id: string
           total_likes: number
@@ -28,7 +32,11 @@ export type Database = {
         }
         Insert: {
           artist_name: string
+          banner_url?: string | null
+          bio_links?: Json | null
           created_at?: string
+          dms_open?: boolean | null
+          featured_snippet_id?: string | null
           genres?: Database["public"]["Enums"]["music_genre"][]
           id?: string
           total_likes?: number
@@ -39,7 +47,11 @@ export type Database = {
         }
         Update: {
           artist_name?: string
+          banner_url?: string | null
+          bio_links?: Json | null
           created_at?: string
+          dms_open?: boolean | null
+          featured_snippet_id?: string | null
           genres?: Database["public"]["Enums"]["music_genre"][]
           id?: string
           total_likes?: number
@@ -50,6 +62,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "artist_profiles_featured_snippet_id_fkey"
+            columns: ["featured_snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "artist_profiles_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
@@ -57,6 +76,112 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      comments: {
+        Row: {
+          created_at: string | null
+          id: string
+          ms_timestamp: number | null
+          parent_comment_id: string | null
+          pinned: boolean | null
+          snippet_id: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ms_timestamp?: number | null
+          parent_comment_id?: string | null
+          pinned?: boolean | null
+          snippet_id: string
+          text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ms_timestamp?: number | null
+          parent_comment_id?: string | null
+          pinned?: boolean | null
+          snippet_id?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_members: {
+        Row: {
+          conversation_id: string
+          joined_at: string | null
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          joined_at?: string | null
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          joined_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       engagement_events: {
         Row: {
@@ -142,6 +267,113 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          id: string
+          read: boolean | null
+          sender_id: string
+          text: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_id: string
+          text: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          comment_id: string | null
+          created_at: string | null
+          from_user_id: string | null
+          id: string
+          playlist_id: string | null
+          read: boolean | null
+          snippet_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string | null
+          from_user_id?: string | null
+          id?: string
+          playlist_id?: string | null
+          read?: boolean | null
+          snippet_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string | null
+          from_user_id?: string | null
+          id?: string
+          playlist_id?: string | null
+          read?: boolean | null
+          snippet_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playlist_items: {
         Row: {
           created_at: string | null
@@ -185,6 +417,9 @@ export type Database = {
           creator_id: string | null
           description: string | null
           id: string
+          is_public: boolean | null
+          likes_count: number | null
+          saves_count: number | null
           title: string
           updated_at: string | null
         }
@@ -194,6 +429,9 @@ export type Database = {
           creator_id?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean | null
+          likes_count?: number | null
+          saves_count?: number | null
           title: string
           updated_at?: string | null
         }
@@ -203,6 +441,9 @@ export type Database = {
           creator_id?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean | null
+          likes_count?: number | null
+          saves_count?: number | null
           title?: string
           updated_at?: string | null
         }
@@ -242,6 +483,55 @@ export type Database = {
           username?: string
         }
         Relationships: []
+      }
+      reactions: {
+        Row: {
+          comment_id: string | null
+          created_at: string | null
+          emoji: string
+          id: string
+          snippet_id: string | null
+          user_id: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string | null
+          emoji: string
+          id?: string
+          snippet_id?: string | null
+          user_id: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string | null
+          emoji?: string
+          id?: string
+          snippet_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reactions_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       snippet_variants: {
         Row: {

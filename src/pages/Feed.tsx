@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SnippetCard } from "@/components/Feed/SnippetCard";
 import { SearchBar } from "@/components/Feed/SearchBar";
+import { NotificationBadge } from "@/components/Notifications/NotificationBadge";
 import { toast } from "sonner";
 import { User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -304,10 +305,12 @@ export default function Feed() {
           <img src={logo} alt="BeatSeek" className="w-10 h-10" />
           <h1 className="text-xl font-bold gradient-text">BeatSeek</h1>
           <div className="flex items-center gap-2">
+            <NotificationBadge />
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate("/profile")}
+              aria-label="Profile"
             >
               <User className="w-5 h-5" />
             </Button>
@@ -315,6 +318,7 @@ export default function Feed() {
               variant="ghost"
               size="icon"
               onClick={handleLogout}
+              aria-label="Logout"
             >
               <LogOut className="w-5 h-5" />
             </Button>
