@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SnippetCard } from "@/components/Feed/SnippetCard";
@@ -55,7 +55,8 @@ export default function Feed() {
         .from("snippets")
         .select(`
           *,
-          artist_profiles!inner (
+          artist_profiles (
+            id,
             artist_name,
             user_id
           )
@@ -81,10 +82,17 @@ export default function Feed() {
 
       if (error) throw error;
 
-      const formattedSnippets = data?.map((snippet: any) => ({
-        ...snippet,
-        artist_name: snippet.artist_profiles.artist_name,
-      })) || [];
+      const formattedSnippets = data?.map((snippet: any) => {
+        const artistProfile = Array.isArray(snippet.artist_profiles)
+          ? snippet.artist_profiles[0]
+          : snippet.artist_profiles;
+
+        return {
+          ...snippet,
+          artist_profiles: artistProfile ?? null,
+          artist_name: artistProfile?.artist_name?.trim() || "Unknown Artist",
+        };
+      }) || [];
 
       setSnippets(formattedSnippets);
     } catch (error) {
@@ -137,7 +145,7 @@ export default function Feed() {
           const currentSnippet = snippets[currentIndex];
           if (currentSnippet) {
             const audioElements = document.querySelectorAll('audio');
-            audioElements[currentIndex]?.paused 
+            audioElements[currentIndex]?.paused
               ? audioElements[currentIndex]?.play()
               : audioElements[currentIndex]?.pause();
           }
@@ -190,14 +198,14 @@ export default function Feed() {
       setInteractions(newInteractions);
 
       // Update snippet likes count
-      setSnippets(prev => prev.map(s => 
-        s.id === snippetId 
+      setSnippets(prev => prev.map(s =>
+        s.id === snippetId
           ? { ...s, likes: s.likes + (newLikedState ? 1 : -1) }
           : s
       ));
 
       toast.success(newLikedState ? "Added to likes!" : "Removed from likes");
-      
+
       // Track engagement
       if (newLikedState) {
         trackEvent(snippetId, 'like');
@@ -233,7 +241,7 @@ export default function Feed() {
       setInteractions(newInteractions);
 
       toast.success(newSavedState ? "Saved to library!" : "Removed from library");
-      
+
       // Track engagement
       if (newSavedState) {
         trackEvent(snippetId, 'save');
@@ -245,7 +253,7 @@ export default function Feed() {
 
   const handleShare = (snippet: any) => {
     trackEvent(snippet.id, 'share');
-    
+
     if (navigator.share) {
       navigator.share({
         title: snippet.title,
