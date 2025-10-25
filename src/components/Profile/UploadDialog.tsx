@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Upload as UploadIcon, Image as ImageIcon, Music, Loader2, X, RotateCcw } from 'lucide-react';
 import {
   Dialog,
@@ -146,6 +147,12 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: UploadDialogProp
     setUploadAbortController(abortController);
 
     try {
+      // Get auth token for secure upload
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('Authentication required');
+      }
+
       const formData = new FormData();
       formData.append('title', title);
       formData.append('audio', audioFile!);
@@ -154,6 +161,9 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: UploadDialogProp
       const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
       const response = await fetch(`${SUPABASE_URL}/functions/v1/upload-snippet`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: formData,
         signal: abortController.signal,
       });

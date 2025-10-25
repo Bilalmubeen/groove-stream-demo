@@ -56,13 +56,6 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "artist_profiles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
       engagement_events: {
@@ -70,22 +63,31 @@ export type Database = {
           created_at: string
           event_type: string
           id: string
+          ms_played: number | null
+          session_id: string | null
           snippet_id: string
           user_id: string | null
+          variant_id: string | null
         }
         Insert: {
           created_at?: string
           event_type: string
           id?: string
+          ms_played?: number | null
+          session_id?: string | null
           snippet_id: string
           user_id?: string | null
+          variant_id?: string | null
         }
         Update: {
           created_at?: string
           event_type?: string
           id?: string
+          ms_played?: number | null
+          session_id?: string | null
           snippet_id?: string
           user_id?: string | null
+          variant_id?: string | null
         }
         Relationships: [
           {
@@ -93,6 +95,13 @@ export type Database = {
             columns: ["snippet_id"]
             isOneToOne: false
             referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "engagement_events_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "snippet_variants"
             referencedColumns: ["id"]
           },
         ]
@@ -122,13 +131,6 @@ export type Database = {
             columns: ["follower_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "follows_follower_id_fkey"
-            columns: ["follower_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -167,6 +169,44 @@ export type Database = {
         }
         Relationships: []
       }
+      snippet_variants: {
+        Row: {
+          audio_path: string
+          cover_path: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          label: string | null
+          parent_snippet_id: string
+        }
+        Insert: {
+          audio_path: string
+          cover_path?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          parent_snippet_id: string
+        }
+        Update: {
+          audio_path?: string
+          cover_path?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          label?: string | null
+          parent_snippet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snippet_variants_parent_snippet_id_fkey"
+            columns: ["parent_snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       snippets: {
         Row: {
           approved_at: string | null
@@ -174,12 +214,15 @@ export type Database = {
           audio_url: string
           cover_image_url: string | null
           created_at: string
+          cta_type: Database["public"]["Enums"]["cta_type"] | null
+          cta_url: string | null
           duration: number
           genre: Database["public"]["Enums"]["music_genre"]
+          hook_start_ms: number | null
           id: string
           likes: number
           rejection_reason: string | null
-          search_vector: unknown | null
+          search_vector: unknown
           shares: number
           status: Database["public"]["Enums"]["snippet_status"]
           tags: string[] | null
@@ -193,12 +236,15 @@ export type Database = {
           audio_url: string
           cover_image_url?: string | null
           created_at?: string
+          cta_type?: Database["public"]["Enums"]["cta_type"] | null
+          cta_url?: string | null
           duration: number
           genre: Database["public"]["Enums"]["music_genre"]
+          hook_start_ms?: number | null
           id?: string
           likes?: number
           rejection_reason?: string | null
-          search_vector?: unknown | null
+          search_vector?: unknown
           shares?: number
           status?: Database["public"]["Enums"]["snippet_status"]
           tags?: string[] | null
@@ -212,12 +258,15 @@ export type Database = {
           audio_url?: string
           cover_image_url?: string | null
           created_at?: string
+          cta_type?: Database["public"]["Enums"]["cta_type"] | null
+          cta_url?: string | null
           duration?: number
           genre?: Database["public"]["Enums"]["music_genre"]
+          hook_start_ms?: number | null
           id?: string
           likes?: number
           rejection_reason?: string | null
-          search_vector?: unknown | null
+          search_vector?: unknown
           shares?: number
           status?: Database["public"]["Enums"]["snippet_status"]
           tags?: string[] | null
@@ -231,6 +280,38 @@ export type Database = {
             columns: ["artist_id"]
             isOneToOne: false
             referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trending_scores: {
+        Row: {
+          artist_id: string
+          last_updated: string
+          score: number
+          snippet_id: string
+          tag: string | null
+        }
+        Insert: {
+          artist_id: string
+          last_updated?: string
+          score?: number
+          snippet_id: string
+          tag?: string | null
+        }
+        Update: {
+          artist_id?: string
+          last_updated?: string
+          score?: number
+          snippet_id?: string
+          tag?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trending_scores_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: true
+            referencedRelation: "snippets"
             referencedColumns: ["id"]
           },
         ]
@@ -257,13 +338,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_roles_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -314,43 +388,35 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "user_snippet_interactions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["id"]
-          },
         ]
       }
     }
     Views: {
-      public_profiles: {
+      mv_creator_metrics_daily: {
         Row: {
-          avatar_url: string | null
-          bio: string | null
-          created_at: string | null
-          id: string | null
-          updated_at: string | null
-          username: string | null
+          artist_id: string | null
+          completes: number | null
+          cta_clicks: number | null
+          day: string | null
+          follows: number | null
+          impressions: number | null
+          likes: number | null
+          play_15s: number | null
+          play_3s: number | null
+          plays: number | null
+          saves: number | null
+          skips: number | null
+          unique_users: number | null
         }
-        Insert: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
-          id?: string | null
-          updated_at?: string | null
-          username?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          bio?: string | null
-          created_at?: string | null
-          id?: string | null
-          updated_at?: string | null
-          username?: string | null
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "snippets_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -368,6 +434,8 @@ export type Database = {
     }
     Enums: {
       app_role: "listener" | "artist" | "admin"
+      cta_type: "full_track" | "presave" | "merch" | "custom"
+      feed_rail: "for_you" | "new_this_week" | "following" | "underground"
       music_genre:
         | "hip-hop"
         | "trap"
@@ -512,6 +580,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["listener", "artist", "admin"],
+      cta_type: ["full_track", "presave", "merch", "custom"],
+      feed_rail: ["for_you", "new_this_week", "following", "underground"],
       music_genre: [
         "hip-hop",
         "trap",

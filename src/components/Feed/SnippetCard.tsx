@@ -94,7 +94,7 @@ export function SnippetCard({
 
     const handleEnded = () => {
       if (!hasTrackedComplete) {
-        trackEvent(snippet.id, 'play_complete');
+        trackEvent(snippet.id, 'complete');
         setHasTrackedComplete(true);
       }
       
