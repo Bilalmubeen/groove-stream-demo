@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Heart, Share2, Bookmark, Play, Pause, Music, ExternalLink } from "lucide-react";
+import { Heart, Share2, Bookmark, Play, Pause, Music, ExternalLink, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEngagement } from "@/hooks/useEngagement";
 import { useAudio } from "@/contexts/AudioContext";
+import { CommentsSheet } from "@/components/Comments/CommentsSheet";
 
 interface SnippetCardProps {
   snippet: {
@@ -23,6 +24,7 @@ interface SnippetCardProps {
   onShare: () => void;
   isLiked: boolean;
   isSaved: boolean;
+  isArtist?: boolean;
 }
 
 export function SnippetCard({
@@ -33,9 +35,11 @@ export function SnippetCard({
   onShare,
   isLiked,
   isSaved,
+  isArtist = false,
 }: SnippetCardProps) {
   const [hasTracked3s, setHasTracked3s] = useState(false);
   const [hasTrackedComplete, setHasTrackedComplete] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { trackEvent } = useEngagement();
   const { play, pause, isPlaying: isAudioPlaying, currentlyPlaying } = useAudio();
@@ -202,6 +206,17 @@ export function SnippetCard({
           </button>
 
           <button
+            onClick={() => setCommentsOpen(true)}
+            className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
+            aria-label="Comments"
+          >
+            <div className="w-14 h-14 rounded-full flex items-center justify-center glass">
+              <MessageCircle className="w-6 h-6" />
+            </div>
+            <span className="text-sm text-muted-foreground">Comment</span>
+          </button>
+
+          <button
             onClick={onShare}
             className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
             aria-label="Share"
@@ -213,6 +228,13 @@ export function SnippetCard({
           </button>
         </div>
       </div>
+
+      <CommentsSheet
+        snippetId={snippet.id}
+        isOpen={commentsOpen}
+        onClose={() => setCommentsOpen(false)}
+        isArtist={isArtist}
+      />
     </div>
   );
 }

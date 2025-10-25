@@ -13,6 +13,8 @@ import Upload from "./pages/Upload";
 import Search from "./pages/Search";
 import Notifications from "./pages/Notifications";
 import FollowersList from "./pages/FollowersList";
+import Messages from "./pages/Messages";
+import Explore from "./pages/Explore";
 import { AudioProvider } from "./contexts/AudioContext";
 import { GlobalUploadCTA } from "./components/Upload/GlobalUploadCTA";
 import Profile from "./pages/Profile";
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/search" element={<Search />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/u/:handle/followers" element={<FollowersList />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/explore" element={<Explore />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/u/:handle" element={<Profile />} />
