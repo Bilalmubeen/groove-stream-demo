@@ -148,13 +148,10 @@ export default function FollowersList() {
         toast.success("Following");
       }
 
-      // Update local state
-      const updateUser = (user: UserFollow) =>
-        user.id === userId ? { ...user, isFollowing: !currentlyFollowing } : user;
-      
-      setFollowers(prev => prev.map(updateUser));
-      setFollowing(prev => prev.map(updateUser));
+      // Refresh the entire list to get accurate data
+      await fetchData();
     } catch (error) {
+      console.error('Follow error:', error);
       toast.error("Failed to update follow status");
     }
   };
