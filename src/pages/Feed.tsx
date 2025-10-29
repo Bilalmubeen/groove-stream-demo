@@ -219,6 +219,8 @@ export default function Feed() {
           snippet_id: snippetId,
           liked: newLikedState,
           saved: currentInteraction?.saved || false,
+        }, {
+          onConflict: 'user_id,snippet_id'
         });
 
       if (error) throw error;
@@ -245,6 +247,7 @@ export default function Feed() {
         trackEvent(snippetId, 'like');
       }
     } catch (error) {
+      console.error('Like error:', error);
       toast.error("Failed to update like");
     }
   };
