@@ -5,10 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileHeader } from '@/components/Profile/ProfileHeader';
 import { SnippetsGrid } from '@/components/Profile/SnippetsGrid';
 import { PlaylistsGrid } from '@/components/Profile/PlaylistsGrid';
+import { LikedSnippetsGrid } from '@/components/Profile/LikedSnippetsGrid';
 import { UploadDialog } from '@/components/Profile/UploadDialog';
 import { EditProfileDialog } from '@/components/Profile/EditProfileDialog';
 import { CreatePlaylistDialog } from '@/components/Profile/CreatePlaylistDialog';
-import { Music, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Profile() {
@@ -169,17 +170,11 @@ export default function Profile() {
           </TabsContent>
 
           <TabsContent value="liked" className="mt-6">
-            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Music className="w-10 h-10 text-muted-foreground" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">No liked snippets</h3>
-              <p className="text-muted-foreground max-w-sm">
-                {isOwnProfile
-                  ? 'Snippets you like will appear here.'
-                  : 'This user hasn\'t liked any snippets yet.'}
-              </p>
-            </div>
+            <LikedSnippetsGrid
+              key={`liked-${refreshKey}`}
+              userId={profileUserId!}
+              isOwnProfile={isOwnProfile}
+            />
           </TabsContent>
 
           <TabsContent value="playlists" className="mt-6">

@@ -71,7 +71,7 @@ export default function Playlist() {
             title,
             cover_image_url,
             artist_id,
-            artist_profiles (
+            artist_profiles!snippets_artist_id_fkey (
               artist_name
             )
           )
