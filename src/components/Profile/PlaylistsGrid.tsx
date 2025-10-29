@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Music, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ interface PlaylistsGridProps {
 }
 
 export function PlaylistsGrid({ userId, isOwnProfile, onCreateClick }: PlaylistsGridProps) {
+  const navigate = useNavigate();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,7 +88,11 @@ export function PlaylistsGrid({ userId, isOwnProfile, onCreateClick }: Playlists
       )}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {playlists.map((playlist) => (
-          <Card key={playlist.id} className="group cursor-pointer hover:shadow-lg transition-all overflow-hidden">
+          <Card
+            key={playlist.id}
+            className="group cursor-pointer hover:shadow-lg transition-all overflow-hidden"
+            onClick={() => navigate(`/playlist/${playlist.id}`)}
+          >
             <div className="aspect-square bg-muted flex items-center justify-center">
               {playlist.cover_path ? (
                 <img
