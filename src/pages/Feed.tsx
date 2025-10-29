@@ -70,7 +70,7 @@ export default function Feed() {
         .from("snippets")
         .select(`
           *,
-          artist_profiles (
+          artist_profiles!snippets_artist_id_fkey (
             id,
             artist_name,
             user_id
