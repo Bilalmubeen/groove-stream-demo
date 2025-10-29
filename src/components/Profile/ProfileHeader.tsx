@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, Settings, UserPlus, UserMinus, MessageCircle } from 'lucide-react';
@@ -25,6 +26,7 @@ interface StatsData {
 }
 
 export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick }: ProfileHeaderProps) {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<StatsData>({ followers: 0, following: 0, likes: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
@@ -167,11 +169,17 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
 
           {/* Stats */}
           <div className="flex items-center gap-6 text-sm">
-            <button className="hover:text-primary transition-smooth">
+            <button 
+              onClick={() => navigate(`/u/${profile?.username}/followers`)}
+              className="hover:text-primary transition-smooth"
+            >
               <span className="font-semibold">{stats.followers}</span>
               <span className="text-muted-foreground ml-1">Followers</span>
             </button>
-            <button className="hover:text-primary transition-smooth">
+            <button 
+              onClick={() => navigate(`/u/${profile?.username}/followers`)}
+              className="hover:text-primary transition-smooth"
+            >
               <span className="font-semibold">{stats.following}</span>
               <span className="text-muted-foreground ml-1">Following</span>
             </button>
