@@ -197,24 +197,14 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
           {/* Action Buttons */}
           <div className="flex items-center gap-3 pt-2">
             {isOwnProfile ? (
-              <>
-                <Button
-                  variant="gradient"
-                  onClick={onUploadClick}
-                  className="flex-1 sm:flex-initial"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Snippet
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={onEditClick}
-                  className="flex-1 sm:flex-initial"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Button>
-              </>
+              <Button
+                variant="outline"
+                onClick={onEditClick}
+                className="flex-1 sm:flex-initial"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Edit Profile
+              </Button>
             ) : (
               <>
                 <Button
