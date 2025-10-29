@@ -29,7 +29,6 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <GlobalUploadCTA />
           <Routes>
             <Route path="/" element={<Feed />} />
             <Route path="/login" element={<LoginPage />} />
