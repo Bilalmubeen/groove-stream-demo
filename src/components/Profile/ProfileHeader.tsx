@@ -209,10 +209,14 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
                 <Button
                   variant="outline"
                   onClick={onEditClick}
-                  className="flex-1 sm:flex-initial"
                 >
-                  <Settings className="w-4 h-4 mr-2" />
                   Edit Profile
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/settings')}
+                >
+                  <Settings className="w-4 h-4" />
                 </Button>
               </>
             ) : (

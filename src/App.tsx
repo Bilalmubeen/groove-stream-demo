@@ -19,6 +19,7 @@ import Playlist from "./pages/Playlist";
 import { AudioProvider } from "./contexts/AudioContext";
 import { GlobalUploadCTA } from "./components/Upload/GlobalUploadCTA";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/playlist/:id" element={<Playlist />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/u/:handle" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/welcome" element={<Index />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />

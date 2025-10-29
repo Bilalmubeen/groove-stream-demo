@@ -680,6 +680,99 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          allow_messages_from: string
+          audio_quality: string
+          auto_publish: boolean
+          autoplay: boolean
+          compact_mode: boolean
+          content_language: string
+          created_at: string
+          default_volume: number
+          email_notifications: boolean
+          id: string
+          notify_comments: boolean
+          notify_follows: boolean
+          notify_likes: boolean
+          notify_mentions: boolean
+          notify_messages: boolean
+          notify_replies: boolean
+          notify_uploads: boolean
+          preferred_genres: string[] | null
+          profile_visibility: string
+          push_notifications: boolean
+          show_analytics: boolean
+          show_animations: boolean
+          show_explicit: boolean
+          show_liked_snippets: boolean
+          show_playlists: boolean
+          theme: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_messages_from?: string
+          audio_quality?: string
+          auto_publish?: boolean
+          autoplay?: boolean
+          compact_mode?: boolean
+          content_language?: string
+          created_at?: string
+          default_volume?: number
+          email_notifications?: boolean
+          id?: string
+          notify_comments?: boolean
+          notify_follows?: boolean
+          notify_likes?: boolean
+          notify_mentions?: boolean
+          notify_messages?: boolean
+          notify_replies?: boolean
+          notify_uploads?: boolean
+          preferred_genres?: string[] | null
+          profile_visibility?: string
+          push_notifications?: boolean
+          show_analytics?: boolean
+          show_animations?: boolean
+          show_explicit?: boolean
+          show_liked_snippets?: boolean
+          show_playlists?: boolean
+          theme?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_messages_from?: string
+          audio_quality?: string
+          auto_publish?: boolean
+          autoplay?: boolean
+          compact_mode?: boolean
+          content_language?: string
+          created_at?: string
+          default_volume?: number
+          email_notifications?: boolean
+          id?: string
+          notify_comments?: boolean
+          notify_follows?: boolean
+          notify_likes?: boolean
+          notify_mentions?: boolean
+          notify_messages?: boolean
+          notify_replies?: boolean
+          notify_uploads?: boolean
+          preferred_genres?: string[] | null
+          profile_visibility?: string
+          push_notifications?: boolean
+          show_analytics?: boolean
+          show_animations?: boolean
+          show_explicit?: boolean
+          show_liked_snippets?: boolean
+          show_playlists?: boolean
+          theme?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
