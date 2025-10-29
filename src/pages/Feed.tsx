@@ -19,6 +19,7 @@ export default function Feed() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("all");
+  const [feedFilter, setFeedFilter] = useState<"for-you" | "following">("for-you");
   const containerRef = useRef<HTMLDivElement>(null);
   const { trackEvent } = useEngagement();
 
@@ -77,6 +78,24 @@ export default function Feed() {
           )
         `)
         .eq("status", "approved");
+
+      // Apply "Following" filter
+      if (feedFilter === "following" && user) {
+        const { data: follows } = await supabase
+          .from("follows")
+          .select("following_id")
+          .eq("follower_id", user.id);
+
+        const followingIds = follows?.map(f => f.following_id) || [];
+        
+        if (followingIds.length === 0) {
+          setSnippets([]);
+          setIsLoading(false);
+          return;
+        }
+
+        query = query.in("artist_id", followingIds);
+      }
 
       // Apply genre filter
       if (selectedGenre !== "all") {
@@ -184,7 +203,7 @@ export default function Feed() {
       setIsLoading(true);
       fetchSnippets();
     }
-  }, [searchQuery, selectedGenre]);
+  }, [searchQuery, selectedGenre, feedFilter]);
 
   const handleLike = async (snippetId: string) => {
     if (!user) return;
@@ -297,18 +316,26 @@ export default function Feed() {
     );
   }
 
-  if (snippets.length === 0) {
+  if (snippets.length === 0 && !isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
           <img src={logo} alt="BeatSeek" className="w-24 h-24 mx-auto" />
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold gradient-text">No tracks yet!</h2>
-            <p className="text-muted-foreground">Be the first to upload some music</p>
+            <h2 className="text-2xl font-bold gradient-text">
+              {feedFilter === "following" ? "No tracks from artists you follow" : "No tracks yet!"}
+            </h2>
+            <p className="text-muted-foreground">
+              {feedFilter === "following" 
+                ? "Start following artists to see their content here" 
+                : "Be the first to upload some music"}
+            </p>
           </div>
-          <Button onClick={handleLogout} variant="outline">
-            Logout
-          </Button>
+          {feedFilter === "following" && (
+            <Button onClick={() => setFeedFilter("for-you")} variant="outline">
+              View all tracks
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -318,12 +345,6 @@ export default function Feed() {
     <div className="relative h-screen overflow-hidden">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
-        <SearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedGenre={selectedGenre}
-          onGenreChange={setSelectedGenre}
-        />
         <div className="flex items-center justify-between p-4 max-w-7xl mx-auto">
           <img src={logo} alt="BeatSeek" className="w-10 h-10" />
           <h1 className="text-xl font-bold gradient-text">BeatSeek</h1>
@@ -347,6 +368,31 @@ export default function Feed() {
             </Button>
           </div>
         </div>
+        
+        {/* Feed Filter Tabs */}
+        <div className="flex items-center gap-1 px-4 pb-3 max-w-7xl mx-auto">
+          <Button
+            variant={feedFilter === "for-you" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setFeedFilter("for-you")}
+          >
+            For You
+          </Button>
+          <Button
+            variant={feedFilter === "following" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setFeedFilter("following")}
+          >
+            Following
+          </Button>
+        </div>
+
+        <SearchBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedGenre={selectedGenre}
+          onGenreChange={setSelectedGenre}
+        />
       </header>
 
       {/* Feed */}
