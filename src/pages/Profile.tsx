@@ -6,7 +6,8 @@ import { ProfileHeader } from '@/components/Profile/ProfileHeader';
 import { SnippetsGrid } from '@/components/Profile/SnippetsGrid';
 import { UploadDialog } from '@/components/Profile/UploadDialog';
 import { EditProfileDialog } from '@/components/Profile/EditProfileDialog';
-import { Music, ArrowLeft } from 'lucide-react';
+import { CreatePlaylistDialog } from '@/components/Profile/CreatePlaylistDialog';
+import { Music, ArrowLeft, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Profile() {
@@ -18,6 +19,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCreatePlaylistDialog, setShowCreatePlaylistDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
@@ -185,11 +187,17 @@ export default function Profile() {
                 <Music className="w-10 h-10 text-muted-foreground" />
               </div>
               <h3 className="text-xl font-semibold mb-2">No playlists yet</h3>
-              <p className="text-muted-foreground max-w-sm">
+              <p className="text-muted-foreground max-w-sm mb-6">
                 {isOwnProfile
                   ? 'Create playlists to organize your favorite snippets.'
                   : 'This user hasn\'t created any playlists yet.'}
               </p>
+              {isOwnProfile && (
+                <Button onClick={() => setShowCreatePlaylistDialog(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Playlist
+                </Button>
+              )}
             </div>
           </TabsContent>
         </Tabs>
@@ -207,6 +215,12 @@ export default function Profile() {
         onOpenChange={setShowEditDialog}
         userId={currentUserId!}
         onSuccess={handleEditSuccess}
+      />
+
+      <CreatePlaylistDialog
+        open={showCreatePlaylistDialog}
+        onOpenChange={setShowCreatePlaylistDialog}
+        onSuccess={handleUploadSuccess}
       />
     </div>
   );
