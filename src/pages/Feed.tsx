@@ -23,30 +23,45 @@ export default function Feed() {
   const { trackEvent } = useEngagement();
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    let mounted = true;
+
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error || !session) {
+          navigate("/login");
+          return;
+        }
+
+        if (mounted) {
+          setUser(session.user);
+          setIsLoading(true);
+          await Promise.all([
+            fetchSnippets(),
+            fetchInteractions(session.user.id)
+          ]);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        navigate("/login");
+      }
+    };
+
+    checkAuth();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         navigate("/login");
-      } else {
+      } else if (mounted) {
         setUser(session.user);
       }
     });
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        navigate("/login");
-      } else {
-        setUser(session.user);
-        // Defer data fetching
-        setTimeout(() => {
-          fetchSnippets();
-          fetchInteractions(session.user.id);
-        }, 0);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const fetchSnippets = async () => {
