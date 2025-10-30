@@ -23,6 +23,7 @@ export default function Profile() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCreatePlaylistDialog, setShowCreatePlaylistDialog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isArtist, setIsArtist] = useState(false);
 
   useEffect(() => {
     loadCurrentUser();
@@ -59,6 +60,14 @@ export default function Profile() {
         if (error) throw error;
         setProfileUserId(data.id);
         setIsOwnProfile(data.id === currentUserId);
+        
+        // Check if artist
+        const { data: artistData } = await supabase
+          .from('artist_profiles')
+          .select('id')
+          .eq('user_id', data.id)
+          .maybeSingle();
+        setIsArtist(!!artistData);
       } else {
         // /profile route - show current user's profile
         if (!currentUserId) {
@@ -130,6 +139,7 @@ export default function Profile() {
           <ProfileHeader
             userId={profileUserId!}
             isOwnProfile={isOwnProfile}
+            isArtist={isArtist}
             onUploadClick={() => setShowUploadDialog(true)}
             onEditClick={() => setShowEditDialog(true)}
           />

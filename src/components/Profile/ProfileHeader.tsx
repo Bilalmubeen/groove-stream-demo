@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, Settings, UserPlus, UserMinus, MessageCircle } from 'lucide-react';
+import { Upload, Settings, UserPlus, UserMinus, MessageCircle, BarChart3 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -11,6 +11,7 @@ interface ProfileHeaderProps {
   isOwnProfile: boolean;
   onUploadClick: () => void;
   onEditClick: () => void;
+  isArtist?: boolean;
 }
 
 interface ProfileData {
@@ -25,7 +26,7 @@ interface StatsData {
   likes: number;
 }
 
-export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick }: ProfileHeaderProps) {
+export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick, isArtist = false }: ProfileHeaderProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [stats, setStats] = useState<StatsData>({ followers: 0, following: 0, likes: 0 });
@@ -212,6 +213,14 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
                 >
                   Edit Profile
                 </Button>
+                {isArtist && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/analytics')}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={() => navigate('/settings')}

@@ -20,6 +20,9 @@ import { AudioProvider } from "./contexts/AudioContext";
 import { GlobalUploadCTA } from "./components/Upload/GlobalUploadCTA";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Analytics from "./pages/Analytics";
+import SnippetAnalytics from "./pages/SnippetAnalytics";
+import VariantManagement from "./pages/VariantManagement";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +46,9 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/u/:handle" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/analytics/snippet/:id" element={<SnippetAnalytics />} />
+            <Route path="/profile/snippets/:id/variants" element={<VariantManagement />} />
             <Route path="/welcome" element={<Index />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />

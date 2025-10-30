@@ -14,6 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      ab_test_results: {
+        Row: {
+          concluded_at: string | null
+          confidence_score: number | null
+          id: string
+          metric_name: string | null
+          sample_size_a: number | null
+          sample_size_b: number | null
+          snippet_id: string
+          started_at: string | null
+          test_duration_days: number | null
+          variant_a_id: string | null
+          variant_b_id: string | null
+          winner_id: string | null
+        }
+        Insert: {
+          concluded_at?: string | null
+          confidence_score?: number | null
+          id?: string
+          metric_name?: string | null
+          sample_size_a?: number | null
+          sample_size_b?: number | null
+          snippet_id: string
+          started_at?: string | null
+          test_duration_days?: number | null
+          variant_a_id?: string | null
+          variant_b_id?: string | null
+          winner_id?: string | null
+        }
+        Update: {
+          concluded_at?: string | null
+          confidence_score?: number | null
+          id?: string
+          metric_name?: string | null
+          sample_size_a?: number | null
+          sample_size_b?: number | null
+          snippet_id?: string
+          started_at?: string | null
+          test_duration_days?: number | null
+          variant_a_id?: string | null
+          variant_b_id?: string | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ab_test_results_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ab_test_results_variant_a_id_fkey"
+            columns: ["variant_a_id"]
+            isOneToOne: false
+            referencedRelation: "snippet_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ab_test_results_variant_b_id_fkey"
+            columns: ["variant_b_id"]
+            isOneToOne: false
+            referencedRelation: "snippet_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      artist_achievements: {
+        Row: {
+          achievement_type: string
+          artist_id: string
+          id: string
+          metadata: Json | null
+          unlocked_at: string | null
+        }
+        Insert: {
+          achievement_type: string
+          artist_id: string
+          id?: string
+          metadata?: Json | null
+          unlocked_at?: string | null
+        }
+        Update: {
+          achievement_type?: string
+          artist_id?: string
+          id?: string
+          metadata?: Json | null
+          unlocked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artist_achievements_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       artist_profiles: {
         Row: {
           artist_name: string
@@ -580,12 +679,14 @@ export type Database = {
           created_at: string
           cta_type: Database["public"]["Enums"]["cta_type"] | null
           cta_url: string | null
+          draft: boolean | null
           duration: number
           genre: Database["public"]["Enums"]["music_genre"]
           hook_start_ms: number | null
           id: string
           likes: number
           rejection_reason: string | null
+          scheduled_at: string | null
           search_vector: unknown
           shares: number
           status: Database["public"]["Enums"]["snippet_status"]
@@ -602,12 +703,14 @@ export type Database = {
           created_at?: string
           cta_type?: Database["public"]["Enums"]["cta_type"] | null
           cta_url?: string | null
+          draft?: boolean | null
           duration: number
           genre: Database["public"]["Enums"]["music_genre"]
           hook_start_ms?: number | null
           id?: string
           likes?: number
           rejection_reason?: string | null
+          scheduled_at?: string | null
           search_vector?: unknown
           shares?: number
           status?: Database["public"]["Enums"]["snippet_status"]
@@ -624,12 +727,14 @@ export type Database = {
           created_at?: string
           cta_type?: Database["public"]["Enums"]["cta_type"] | null
           cta_url?: string | null
+          draft?: boolean | null
           duration?: number
           genre?: Database["public"]["Enums"]["music_genre"]
           hook_start_ms?: number | null
           id?: string
           likes?: number
           rejection_reason?: string | null
+          scheduled_at?: string | null
           search_vector?: unknown
           shares?: number
           status?: Database["public"]["Enums"]["snippet_status"]
@@ -676,6 +781,38 @@ export type Database = {
             columns: ["snippet_id"]
             isOneToOne: true
             referencedRelation: "snippets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      upload_templates: {
+        Row: {
+          artist_id: string
+          config: Json
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          artist_id: string
+          config: Json
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          artist_id?: string
+          config?: Json
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upload_templates_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -849,6 +986,30 @@ export type Database = {
       }
     }
     Views: {
+      mv_artist_metrics_daily: {
+        Row: {
+          artist_id: string | null
+          completions: number | null
+          impressions: number | null
+          likes: number | null
+          metric_date: string | null
+          plays: number | null
+          retention_15s: number | null
+          retention_3s: number | null
+          saves: number | null
+          shares: number | null
+          unique_listeners: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snippets_artist_id_fkey"
+            columns: ["artist_id"]
+            isOneToOne: false
+            referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mv_creator_metrics_daily: {
         Row: {
           artist_id: string | null
@@ -871,6 +1032,28 @@ export type Database = {
             columns: ["artist_id"]
             isOneToOne: false
             referencedRelation: "artist_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mv_snippet_metrics: {
+        Row: {
+          avg_ms_played: number | null
+          completion_rate: number | null
+          snippet_id: string | null
+          total_completions: number | null
+          total_likes: number | null
+          total_plays: number | null
+          total_saves: number | null
+          total_shares: number | null
+          unique_listeners: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engagement_events_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
             referencedColumns: ["id"]
           },
         ]
