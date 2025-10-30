@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Bell, Lock, Volume2, Palette, ListMusic, BarChart3, Database, Info } from 'lucide-react';
+import { ArrowLeft, User, Bell, Lock, Volume2, Palette, ListMusic, BarChart3, Database, Info, LineChart } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import AccountSettings from '@/components/Settings/AccountSettings';
@@ -15,6 +15,7 @@ import ContentSettings from '@/components/Settings/ContentSettings';
 import ArtistSettings from '@/components/Settings/ArtistSettings';
 import DataSettings from '@/components/Settings/DataSettings';
 import AboutSettings from '@/components/Settings/AboutSettings';
+import AnalyticsSettings from '@/components/Settings/AnalyticsSettings';
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -99,7 +100,7 @@ export default function Settings() {
 
         {/* Settings Tabs */}
         <Tabs defaultValue="account" className="space-y-6">
-          <TabsList className="grid grid-cols-3 lg:grid-cols-9 gap-2 h-auto p-2">
+          <TabsList className="grid grid-cols-3 lg:grid-cols-10 gap-2 h-auto p-2">
             <TabsTrigger value="account" className="flex items-center gap-2">
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Account</span>
@@ -128,6 +129,12 @@ export default function Settings() {
               <TabsTrigger value="artist" className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" />
                 <span className="hidden sm:inline">Artist</span>
+              </TabsTrigger>
+            )}
+            {isArtist && (
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <LineChart className="w-4 h-4" />
+                <span className="hidden sm:inline">Analytics</span>
               </TabsTrigger>
             )}
             <TabsTrigger value="data" className="flex items-center gap-2">
@@ -167,6 +174,12 @@ export default function Settings() {
           {isArtist && (
             <TabsContent value="artist">
               <ArtistSettings userId={userId} />
+            </TabsContent>
+          )}
+
+          {isArtist && (
+            <TabsContent value="analytics">
+              <AnalyticsSettings userId={userId} />
             </TabsContent>
           )}
 
