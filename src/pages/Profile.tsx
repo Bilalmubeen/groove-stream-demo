@@ -6,6 +6,7 @@ import { ProfileHeader } from '@/components/Profile/ProfileHeader';
 import { SnippetsGrid } from '@/components/Profile/SnippetsGrid';
 import { PlaylistsGrid } from '@/components/Profile/PlaylistsGrid';
 import { LikedSnippetsGrid } from '@/components/Profile/LikedSnippetsGrid';
+import { FavoritesSnippetsGrid } from '@/components/Profile/FavoritesSnippetsGrid';
 import { UploadDialog } from '@/components/Profile/UploadDialog';
 import { EditProfileDialog } from '@/components/Profile/EditProfileDialog';
 import { CreatePlaylistDialog } from '@/components/Profile/CreatePlaylistDialog';
@@ -163,6 +164,12 @@ export default function Profile() {
               Liked
             </TabsTrigger>
             <TabsTrigger
+              value="favorites"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
+            >
+              Favorites
+            </TabsTrigger>
+            <TabsTrigger
               value="playlists"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
             >
@@ -182,6 +189,14 @@ export default function Profile() {
           <TabsContent value="liked" className="mt-6">
             <LikedSnippetsGrid
               key={`liked-${refreshKey}`}
+              userId={profileUserId!}
+              isOwnProfile={isOwnProfile}
+            />
+          </TabsContent>
+
+          <TabsContent value="favorites" className="mt-6">
+            <FavoritesSnippetsGrid
+              key={`favorites-${refreshKey}`}
               userId={profileUserId!}
               isOwnProfile={isOwnProfile}
             />

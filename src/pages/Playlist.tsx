@@ -2,8 +2,15 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Music, Play } from 'lucide-react';
+import { ArrowLeft, Music, Play, Trash2, ListPlus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { toast } from '@/hooks/use-toast';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface PlaylistDetails {
   id: string;
@@ -34,6 +41,12 @@ export default function Playlist() {
   const [playlist, setPlaylist] = useState<PlaylistDetails | null>(null);
   const [items, setItems] = useState<PlaylistItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadCurrentUser();
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -41,6 +54,11 @@ export default function Playlist() {
       fetchPlaylistItems();
     }
   }, [id]);
+
+  const loadCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setCurrentUserId(user?.id || null);
+  };
 
   const fetchPlaylist = async () => {
     try {
@@ -85,6 +103,37 @@ export default function Playlist() {
       console.error('Error fetching playlist items:', error);
     }
   };
+
+  const removeFromPlaylist = async (snippetId: string) => {
+    try {
+      setRemovingId(snippetId);
+      const { error } = await supabase
+        .from('playlist_items')
+        .delete()
+        .eq('playlist_id', id)
+        .eq('snippet_id', snippetId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Removed from playlist',
+      });
+
+      fetchPlaylistItems();
+    } catch (error) {
+      console.error('Error removing from playlist:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove from playlist',
+        variant: 'destructive',
+      });
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
+  const isOwner = playlist && currentUserId === playlist.creator_id;
 
   if (loading) {
     return (
@@ -141,9 +190,22 @@ export default function Playlist() {
               {playlist.description && (
                 <p className="text-muted-foreground mb-4">{playlist.description}</p>
               )}
-              <p className="text-sm text-muted-foreground">
-                {items.length} {items.length === 1 ? 'snippet' : 'snippets'}
-              </p>
+              <div className="flex items-center gap-4">
+                <p className="text-sm text-muted-foreground">
+                  {items.length} {items.length === 1 ? 'snippet' : 'snippets'}
+                </p>
+                {isOwner && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/')}
+                    className="gap-2"
+                  >
+                    <ListPlus className="w-4 h-4" />
+                    Add Snippets
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -166,14 +228,17 @@ export default function Playlist() {
             {items.map((item, index) => (
               <Card
                 key={item.snippet_id}
-                className="p-4 hover:bg-muted/50 transition-colors cursor-pointer group"
+                className="p-4 hover:bg-muted/50 transition-colors group"
               >
                 <div className="flex items-center gap-4">
                   <span className="text-muted-foreground w-6 text-center">
                     {index + 1}
                   </span>
                   
-                  <div className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0 relative group-hover:bg-primary/20 transition-colors">
+                  <div 
+                    className="w-12 h-12 rounded bg-muted flex items-center justify-center flex-shrink-0 relative group-hover:bg-primary/20 transition-colors cursor-pointer"
+                    onClick={() => navigate('/')}
+                  >
                     {item.snippet.cover_image_url ? (
                       <>
                         <img
@@ -190,12 +255,37 @@ export default function Playlist() {
                     )}
                   </div>
 
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate('/')}>
                     <h3 className="font-semibold truncate">{item.snippet.title}</h3>
                     <p className="text-sm text-muted-foreground truncate">
                       {item.snippet.artist_profiles?.artist_name || 'Unknown Artist'}
                     </p>
                   </div>
+
+                  {isOwner && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeFromPlaylist(item.snippet_id)}
+                            disabled={removingId === item.snippet_id}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            {removingId === item.snippet_id ? (
+                              <div className="w-4 h-4 border-2 border-destructive border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4 text-destructive" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Remove from playlist</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
               </Card>
             ))}

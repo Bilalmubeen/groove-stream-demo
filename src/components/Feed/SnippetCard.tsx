@@ -1,10 +1,17 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Heart, Share2, Bookmark, Play, Pause, Music, ExternalLink, MessageCircle } from "lucide-react";
+import { Heart, Share2, Bookmark, Play, Pause, Music, ExternalLink, MessageCircle, ListPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useEngagement } from "@/hooks/useEngagement";
 import { useAudio } from "@/contexts/AudioContext";
 import { CommentsSheet } from "@/components/Comments/CommentsSheet";
+import { AddToPlaylistDialog } from "@/components/Playlist/AddToPlaylistDialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SnippetCardProps {
   snippet: {
@@ -40,6 +47,7 @@ export function SnippetCard({
   const [hasTracked3s, setHasTracked3s] = useState(false);
   const [hasTrackedComplete, setHasTrackedComplete] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [addToPlaylistOpen, setAddToPlaylistOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { trackEvent } = useEngagement();
   const { play, pause, isPlaying: isAudioPlaying, currentlyPlaying } = useAudio();
@@ -186,24 +194,53 @@ export function SnippetCard({
             </span>
           </button>
 
-          <button
-            onClick={onSave}
-            className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
-            aria-label={isSaved ? "Unsave" : "Save"}
-          >
-            <div className={cn(
-              "w-14 h-14 rounded-full flex items-center justify-center glass transition-colors",
-              isSaved && "bg-secondary/30"
-            )}>
-              <Bookmark 
-                className={cn(
-                  "w-6 h-6 transition-all",
-                  isSaved && "fill-secondary text-secondary scale-110"
-                )}
-              />
-            </div>
-            <span className="text-sm text-muted-foreground">Save</span>
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={onSave}
+                  className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
+                  aria-label={isSaved ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <div className={cn(
+                    "w-14 h-14 rounded-full flex items-center justify-center glass transition-colors",
+                    isSaved && "bg-secondary/30"
+                  )}>
+                    <Bookmark 
+                      className={cn(
+                        "w-6 h-6 transition-all",
+                        isSaved && "fill-secondary text-secondary scale-110"
+                      )}
+                    />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Favorite</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add to favorites</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setAddToPlaylistOpen(true)}
+                  className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
+                  aria-label="Add to playlist"
+                >
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center glass">
+                    <ListPlus className="w-6 h-6" />
+                  </div>
+                  <span className="text-sm text-muted-foreground">Playlist</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Add to playlist</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
           <button
             onClick={() => setCommentsOpen(true)}
@@ -234,6 +271,12 @@ export function SnippetCard({
         isOpen={commentsOpen}
         onClose={() => setCommentsOpen(false)}
         isArtist={isArtist}
+      />
+
+      <AddToPlaylistDialog
+        open={addToPlaylistOpen}
+        onOpenChange={setAddToPlaylistOpen}
+        snippetId={snippet.id}
       />
     </div>
   );
