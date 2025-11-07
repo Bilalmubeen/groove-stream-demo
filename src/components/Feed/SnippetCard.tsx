@@ -6,6 +6,8 @@ import { useEngagement } from "@/hooks/useEngagement";
 import { useAudio } from "@/contexts/AudioContext";
 import { CommentsSheet } from "@/components/Comments/CommentsSheet";
 import { AddToPlaylistDialog } from "@/components/Playlist/AddToPlaylistDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useSwipeable } from "react-swipeable";
 import {
   Tooltip,
   TooltipContent,
@@ -51,8 +53,25 @@ export function SnippetCard({
   const cardRef = useRef<HTMLDivElement>(null);
   const { trackEvent } = useEngagement();
   const { play, pause, isPlaying: isAudioPlaying, currentlyPlaying } = useAudio();
+  const isMobile = useIsMobile();
   
   const isPlaying = isAudioPlaying(snippet.id);
+
+  // Swipe handlers for mobile navigation
+  const swipeHandlers = useSwipeable({
+    onSwipedUp: () => {
+      if (isMobile && cardRef.current) {
+        cardRef.current.parentElement?.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+      }
+    },
+    onSwipedDown: () => {
+      if (isMobile && cardRef.current) {
+        cardRef.current.parentElement?.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+      }
+    },
+    trackMouse: false,
+    trackTouch: true,
+  });
 
   // Auto-play when card becomes active and visible
   useEffect(() => {
@@ -100,6 +119,7 @@ export function SnippetCard({
 
   return (
     <div 
+      {...swipeHandlers}
       ref={cardRef}
       className="relative h-screen w-full snap-start snap-always flex items-center justify-center bg-gradient-to-br from-background via-card to-background"
     >
@@ -118,10 +138,13 @@ export function SnippetCard({
       )}
 
       {/* Content */}
-      <div className="relative z-10 w-full max-w-2xl mx-auto px-6 flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-2xl mx-auto px-4 md:px-6 flex flex-col items-center">
         {/* Album Art */}
-        <div className="relative mb-8">
-          <div className="w-80 h-80 rounded-3xl overflow-hidden shadow-2xl animate-pulse-glow">
+        <div className="relative mb-6 md:mb-8">
+          <div className={cn(
+            "rounded-3xl overflow-hidden shadow-2xl animate-pulse-glow",
+            isMobile ? "w-64 h-64" : "w-80 h-80"
+          )}>
             {snippet.cover_image_url ? (
               <img 
                 src={snippet.cover_image_url} 
@@ -138,22 +161,25 @@ export function SnippetCard({
           {/* Play/Pause button overlay */}
           <Button
             onClick={togglePlayPause}
-            size="lg"
-            className="absolute bottom-4 right-4 w-16 h-16 rounded-full bg-primary/90 hover:bg-primary shadow-xl"
+            size={isMobile ? "default" : "lg"}
+            className={cn(
+              "absolute rounded-full bg-primary/90 hover:bg-primary shadow-xl",
+              isMobile ? "bottom-3 right-3 w-12 h-12" : "bottom-4 right-4 w-16 h-16"
+            )}
           >
             {isPlaying ? (
-              <Pause className="w-8 h-8" />
+              <Pause className={isMobile ? "w-5 h-5" : "w-8 h-8"} />
             ) : (
-              <Play className="w-8 h-8 ml-1" />
+              <Play className={cn(isMobile ? "w-5 h-5 ml-0.5" : "w-8 h-8 ml-1")} />
             )}
           </Button>
         </div>
 
         {/* Track Info */}
-        <div className="text-center mb-8 space-y-2">
-          <h2 className="text-3xl font-bold text-foreground">{snippet.title}</h2>
-          <p className="text-xl text-muted-foreground">{snippet.artist_name}</p>
-          <span className="inline-block px-4 py-1 rounded-full bg-primary/20 text-primary text-sm font-medium">
+        <div className="text-center mb-6 md:mb-8 space-y-2">
+          <h2 className={cn("font-bold text-foreground", isMobile ? "text-2xl" : "text-3xl")}>{snippet.title}</h2>
+          <p className={cn("text-muted-foreground", isMobile ? "text-lg" : "text-xl")}>{snippet.artist_name}</p>
+          <span className={cn("inline-block px-3 md:px-4 py-1 rounded-full bg-primary/20 text-primary font-medium", isMobile ? "text-xs" : "text-sm")}>
             {snippet.genre}
           </span>
         </div>
@@ -172,96 +198,93 @@ export function SnippetCard({
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-8">
+        <div className={cn("flex items-center", isMobile ? "gap-4" : "gap-8")}>
           <button
             onClick={onLike}
-            className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
+            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
             aria-label={isLiked ? "Unlike" : "Like"}
           >
             <div className={cn(
-              "w-14 h-14 rounded-full flex items-center justify-center glass transition-colors",
+              "rounded-full flex items-center justify-center glass transition-colors",
+              isMobile ? "w-12 h-12" : "w-14 h-14",
               isLiked && "bg-primary/30"
             )}>
               <Heart 
                 className={cn(
-                  "w-6 h-6 transition-all",
+                  "transition-all",
+                  isMobile ? "w-5 h-5" : "w-6 h-6",
                   isLiked && "fill-primary text-primary scale-110"
                 )}
               />
             </div>
-            <span className="text-sm text-muted-foreground">
+            <span className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
               {snippet.likes}
             </span>
           </button>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={onSave}
-                  className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
-                  aria-label={isSaved ? "Remove from favorites" : "Add to favorites"}
-                >
-                  <div className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center glass transition-colors",
-                    isSaved && "bg-secondary/30"
-                  )}>
-                    <Bookmark 
-                      className={cn(
-                        "w-6 h-6 transition-all",
-                        isSaved && "fill-secondary text-secondary scale-110"
-                      )}
-                    />
-                  </div>
-                  <span className="text-sm text-muted-foreground">Favorite</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Add to favorites</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <button
+            onClick={onSave}
+            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
+            aria-label={isSaved ? "Remove from favorites" : "Add to favorites"}
+          >
+            <div className={cn(
+              "rounded-full flex items-center justify-center glass transition-colors",
+              isMobile ? "w-12 h-12" : "w-14 h-14",
+              isSaved && "bg-secondary/30"
+            )}>
+              <Bookmark 
+                className={cn(
+                  "transition-all",
+                  isMobile ? "w-5 h-5" : "w-6 h-6",
+                  isSaved && "fill-secondary text-secondary scale-110"
+                )}
+              />
+            </div>
+            <span className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-sm")}>
+              {isMobile ? "Fav" : "Favorite"}
+            </span>
+          </button>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setAddToPlaylistOpen(true)}
-                  className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
-                  aria-label="Add to playlist"
-                >
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center glass">
-                    <ListPlus className="w-6 h-6" />
-                  </div>
-                  <span className="text-sm text-muted-foreground">Playlist</span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Add to playlist</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <button
+            onClick={() => setAddToPlaylistOpen(true)}
+            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
+            aria-label="Add to playlist"
+          >
+            <div className={cn(
+              "rounded-full flex items-center justify-center glass",
+              isMobile ? "w-12 h-12" : "w-14 h-14"
+            )}>
+              <ListPlus className={isMobile ? "w-5 h-5" : "w-6 h-6"} />
+            </div>
+            <span className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-sm")}>Playlist</span>
+          </button>
 
           <button
             onClick={() => setCommentsOpen(true)}
-            className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
+            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
             aria-label="Comments"
           >
-            <div className="w-14 h-14 rounded-full flex items-center justify-center glass">
-              <MessageCircle className="w-6 h-6" />
+            <div className={cn(
+              "rounded-full flex items-center justify-center glass",
+              isMobile ? "w-12 h-12" : "w-14 h-14"
+            )}>
+              <MessageCircle className={isMobile ? "w-5 h-5" : "w-6 h-6"} />
             </div>
-            <span className="text-sm text-muted-foreground">Comment</span>
+            <span className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-sm")}>Comment</span>
           </button>
 
           <button
             onClick={onShare}
-            className="flex flex-col items-center gap-2 transition-transform hover:scale-110"
+            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
             aria-label="Share"
           >
-            <div className="w-14 h-14 rounded-full flex items-center justify-center glass">
-              <Share2 className="w-6 h-6" />
+            <div className={cn(
+              "rounded-full flex items-center justify-center glass",
+              isMobile ? "w-12 h-12" : "w-14 h-14"
+            )}>
+              <Share2 className={isMobile ? "w-5 h-5" : "w-6 h-6"} />
             </div>
-            <span className="text-sm text-muted-foreground">Share</span>
+            <span className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-sm")}>Share</span>
           </button>
         </div>
       </div>

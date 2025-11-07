@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +10,7 @@ import { MessageCircle, Pin, Heart, Send } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { useEngagement } from "@/hooks/useEngagement";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Comment {
   id: string;
@@ -35,6 +37,7 @@ interface CommentsSheetProps {
 
 export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: CommentsSheetProps) {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const { trackEvent } = useEngagement();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -264,55 +267,76 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
     </div>
   );
 
-  return (
-    <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="bottom" className="h-[85vh] flex flex-col">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5" />
-            Comments {comments.length > 0 && `(${comments.length})`}
-          </SheetTitle>
-        </SheetHeader>
+  const CommentsContent = () => (
+    <>
+      <div className="flex-1 overflow-y-auto space-y-4 my-4">
+        {comments.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p>No comments yet. Be the first!</p>
+          </div>
+        ) : (
+          comments.map((comment) => <CommentItem key={comment.id} comment={comment} />)
+        )}
+      </div>
 
-        <div className="flex-1 overflow-y-auto space-y-4 my-4">
-          {comments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>No comments yet. Be the first!</p>
-            </div>
-          ) : (
-            comments.map((comment) => <CommentItem key={comment.id} comment={comment} />)
-          )}
-        </div>
-
-        <div className="border-t pt-4 space-y-2">
-          {replyingTo && (
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Replying to comment</span>
-              <Button variant="ghost" size="sm" onClick={() => setReplyingTo(null)}>
-                Cancel
-              </Button>
-            </div>
-          )}
-          <div className="flex gap-2">
-            <Textarea
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment..."
-              className="resize-none"
-              rows={2}
-            />
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading || !newComment.trim()}
-              size="icon"
-              className="flex-shrink-0"
-            >
-              <Send className="w-4 h-4" />
+      <div className="border-t pt-4 space-y-2">
+        {replyingTo && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Replying to comment</span>
+            <Button variant="ghost" size="sm" onClick={() => setReplyingTo(null)}>
+              Cancel
             </Button>
           </div>
+        )}
+        <div className="flex gap-2">
+          <Textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Add a comment..."
+            className="resize-none"
+            rows={2}
+          />
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading || !newComment.trim()}
+            size="icon"
+            className="flex-shrink-0"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
         </div>
-      </SheetContent>
-    </Sheet>
+      </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <MessageCircle className="w-5 h-5" />
+              Comments {comments.length > 0 && `(${comments.length})`}
+            </SheetTitle>
+          </SheetHeader>
+          <CommentsContent />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5" />
+            Comments {comments.length > 0 && `(${comments.length})`}
+          </DialogTitle>
+        </DialogHeader>
+        <CommentsContent />
+      </DialogContent>
+    </Dialog>
   );
 }

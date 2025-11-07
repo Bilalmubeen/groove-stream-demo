@@ -6,6 +6,8 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload as UploadIcon, Image as ImageIcon, Music, Loader2, X, RotateCcw } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +45,7 @@ interface UploadDialogProps {
 }
 
 export function UploadDialog({ open, onOpenChange, onSuccess }: UploadDialogProps) {
+  const isMobile = useIsMobile();
   const [title, setTitle] = useState('');
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -236,7 +239,10 @@ export function UploadDialog({ open, onOpenChange, onSuccess }: UploadDialogProp
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className={cn(
+          "max-h-[90vh] overflow-y-auto",
+          isMobile ? "w-[95vw] p-4" : "sm:max-w-2xl"
+        )}>
           <DialogHeader>
             <DialogTitle>Upload Snippet</DialogTitle>
             <DialogDescription>

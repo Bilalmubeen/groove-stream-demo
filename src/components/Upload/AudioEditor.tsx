@@ -8,6 +8,8 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Play, Pause, Save, X, Scissors } from "lucide-react";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface AudioEditorProps {
   audioUrl: string;
@@ -16,6 +18,7 @@ interface AudioEditorProps {
 }
 
 export function AudioEditor({ audioUrl, onSave, onCancel }: AudioEditorProps) {
+  const isMobile = useIsMobile();
   const waveformRef = useRef<HTMLDivElement>(null);
   const wavesurfer = useRef<WaveSurfer | null>(null);
   const regionsPlugin = useRef<RegionsPlugin | null>(null);
@@ -41,8 +44,8 @@ export function AudioEditor({ audioUrl, onSave, onCancel }: AudioEditorProps) {
       waveColor: "hsl(var(--muted-foreground))",
       progressColor: "hsl(var(--primary))",
       cursorColor: "hsl(var(--primary))",
-      height: 128,
-      barWidth: 2,
+      height: isMobile ? 80 : 128,
+      barWidth: isMobile ? 1.5 : 2,
       barGap: 1,
       barRadius: 2,
       plugins: [regionsPlugin.current]
@@ -227,15 +230,20 @@ export function AudioEditor({ audioUrl, onSave, onCancel }: AudioEditorProps) {
           Audio Editor
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className={cn("space-y-4 md:space-y-6", isMobile && "p-4")}>
         {/* Waveform */}
         <div className="space-y-2">
           <div ref={waveformRef} className="w-full bg-muted/30 rounded-lg" />
-          <div className="flex justify-between text-xs text-muted-foreground">
+          <div className={cn("flex justify-between text-muted-foreground", isMobile ? "text-[10px]" : "text-xs")}>
             <span>{trimStart.toFixed(2)}s</span>
             <span>{trimEnd.toFixed(2)}s</span>
-            <span>Duration: {(trimEnd - trimStart).toFixed(2)}s / 30s max</span>
+            {!isMobile && <span>Duration: {(trimEnd - trimStart).toFixed(2)}s / 30s max</span>}
           </div>
+          {isMobile && (
+            <div className="text-center text-[10px] text-muted-foreground">
+              {(trimEnd - trimStart).toFixed(2)}s / 30s
+            </div>
+          )}
         </div>
 
         {/* Playback Controls */}
@@ -243,29 +251,30 @@ export function AudioEditor({ audioUrl, onSave, onCancel }: AudioEditorProps) {
           <Button
             onClick={handlePlayPause}
             disabled={loading}
-            size="lg"
+            size={isMobile ? "default" : "lg"}
             variant="outline"
           >
-            {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+            {isPlaying ? <Pause className={isMobile ? "h-4 w-4" : "h-5 w-5"} /> : <Play className={isMobile ? "h-4 w-4" : "h-5 w-5"} />}
           </Button>
         </div>
 
         {/* Volume Control */}
         <div className="space-y-2">
-          <Label>Volume: {volume}%</Label>
+          <Label className={isMobile ? "text-sm" : ""}>Volume: {volume}%</Label>
           <Slider
             value={[volume]}
             onValueChange={([v]) => setVolume(v)}
             min={0}
             max={200}
             step={1}
+            className={isMobile ? "touch-action-none" : ""}
           />
         </div>
 
         {/* Effects */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label htmlFor="fade-in">Fade In (0.5s)</Label>
+            <Label htmlFor="fade-in" className={isMobile ? "text-sm" : ""}>Fade In (0.5s)</Label>
             <Switch
               id="fade-in"
               checked={fadeIn}
@@ -273,7 +282,7 @@ export function AudioEditor({ audioUrl, onSave, onCancel }: AudioEditorProps) {
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label htmlFor="fade-out">Fade Out (0.5s)</Label>
+            <Label htmlFor="fade-out" className={isMobile ? "text-sm" : ""}>Fade Out (0.5s)</Label>
             <Switch
               id="fade-out"
               checked={fadeOut}
@@ -283,14 +292,14 @@ export function AudioEditor({ audioUrl, onSave, onCancel }: AudioEditorProps) {
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 pt-4">
-          <Button onClick={onCancel} variant="outline" className="flex-1">
-            <X className="h-4 w-4 mr-2" />
-            Cancel
+        <div className={cn("flex gap-2 md:gap-3 pt-4")}>
+          <Button onClick={onCancel} variant="outline" size={isMobile ? "sm" : "default"} className="flex-1">
+            <X className={cn(isMobile ? "h-3 w-3" : "h-4 w-4", !isMobile && "mr-2")} />
+            {!isMobile && "Cancel"}
           </Button>
-          <Button onClick={handleSave} disabled={loading} className="flex-1">
-            <Save className="h-4 w-4 mr-2" />
-            {loading ? "Processing..." : "Save & Continue"}
+          <Button onClick={handleSave} disabled={loading} size={isMobile ? "sm" : "default"} className="flex-1">
+            <Save className={cn(isMobile ? "h-3 w-3" : "h-4 w-4", !isMobile && "mr-2")} />
+            {loading ? (isMobile ? "..." : "Processing...") : (isMobile ? "Save" : "Save & Continue")}
           </Button>
         </div>
       </CardContent>

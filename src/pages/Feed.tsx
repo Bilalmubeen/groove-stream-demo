@@ -4,14 +4,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { SnippetCard } from "@/components/Feed/SnippetCard";
 import { SearchBar } from "@/components/Feed/SearchBar";
 import { NotificationBadge } from "@/components/Notifications/NotificationBadge";
+import { BottomNav } from "@/components/Navigation/BottomNav";
 import { toast } from "sonner";
 import { User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/beatseek-logo.png";
 import { useEngagement } from "@/hooks/useEngagement";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 export default function Feed() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [user, setUser] = useState<any>(null);
   const [snippets, setSnippets] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -345,39 +349,44 @@ export default function Feed() {
   }
 
   return (
-    <div className="relative h-screen overflow-hidden">
+    <div className="relative h-screen overflow-hidden pb-16 md:pb-0">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
-        <div className="flex items-center justify-between p-4 max-w-7xl mx-auto">
-          <img src={logo} alt="BeatSeek" className="w-10 h-10" />
-          <h1 className="text-xl font-bold gradient-text">BeatSeek</h1>
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between p-3 md:p-4 max-w-7xl mx-auto">
+          {!isMobile && <img src={logo} alt="BeatSeek" className="w-10 h-10" />}
+          <h1 className={cn("text-lg md:text-xl font-bold gradient-text", isMobile && "flex-1")}>BeatSeek</h1>
+          <div className="flex items-center gap-1 md:gap-2">
             <NotificationBadge />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/profile")}
-              aria-label="Profile"
-            >
-              <User className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              aria-label="Logout"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
+            {!isMobile && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => navigate("/profile")}
+                  aria-label="Profile"
+                >
+                  <User className="w-5 h-5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLogout}
+                  aria-label="Logout"
+                >
+                  <LogOut className="w-5 h-5" />
+                </Button>
+              </>
+            )}
           </div>
         </div>
         
         {/* Feed Filter Tabs */}
-        <div className="flex items-center gap-1 px-4 pb-3 max-w-7xl mx-auto">
+        <div className="flex items-center gap-1 px-3 md:px-4 pb-2 md:pb-3 max-w-7xl mx-auto">
           <Button
             variant={feedFilter === "for-you" ? "default" : "ghost"}
             size="sm"
             onClick={() => setFeedFilter("for-you")}
+            className="text-xs md:text-sm"
           >
             For You
           </Button>
@@ -385,6 +394,7 @@ export default function Feed() {
             variant={feedFilter === "following" ? "default" : "ghost"}
             size="sm"
             onClick={() => setFeedFilter("following")}
+            className="text-xs md:text-sm"
           >
             Following
           </Button>
@@ -418,6 +428,9 @@ export default function Feed() {
           />
         ))}
       </div>
+
+      {/* Bottom Navigation - Mobile Only */}
+      <BottomNav />
     </div>
   );
 }
