@@ -8,54 +8,80 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* BeatSeek Dark Theme - Music Discovery */
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-
-    /* Purple-Cyan Gradient Brand Colors */
+    /* Light Theme */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
     --primary: 266 75% 65%;
     --primary-foreground: 210 40% 98%;
     --primary-glow: 266 85% 75%;
-
     --secondary: 188 80% 44%;
     --secondary-foreground: 210 40% 98%;
     --secondary-glow: 188 90% 54%;
-
-    --muted: 217 33% 22%;
-    --muted-foreground: 215 20% 65%;
-
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
     --accent: 266 75% 65%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 266 75% 65%;
+    --radius: 1rem;
+    
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(266 75% 65%), hsl(188 80% 44%));
+    --gradient-vibrant: linear-gradient(135deg, hsl(266 85% 75%), hsl(188 90% 54%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 98%), hsl(0 0% 100%));
+    --gradient-glow: radial-gradient(circle at 50% 0%, hsl(266 75% 65% / 0.1), transparent 70%);
+    
+    /* Shadows */
+    --shadow-glow: 0 0 40px hsl(266 75% 65% / 0.2);
+    --shadow-glow-cyan: 0 0 40px hsl(188 80% 44% / 0.2);
+    --shadow-elegant: 0 10px 30px -10px hsl(222 47% 11% / 0.1);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
 
+  .dark {
+    /* Dark Theme - BeatSeek Music Discovery */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 217 33% 17%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 266 75% 65%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 266 85% 75%;
+    --secondary: 188 80% 44%;
+    --secondary-foreground: 210 40% 98%;
+    --secondary-glow: 188 90% 54%;
+    --muted: 217 33% 22%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 266 75% 65%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
     --border: 217 33% 25%;
     --input: 217 33% 20%;
     --ring: 266 75% 65%;
-
-    --radius: 1rem;
-
+    
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(266 75% 65%), hsl(188 80% 44%));
     --gradient-vibrant: linear-gradient(135deg, hsl(266 85% 75%), hsl(188 90% 54%));
     --gradient-subtle: linear-gradient(180deg, hsl(217 33% 17%), hsl(222 47% 11%));
     --gradient-glow: radial-gradient(circle at 50% 0%, hsl(266 75% 65% / 0.15), transparent 70%);
-
+    
     /* Shadows */
     --shadow-glow: 0 0 40px hsl(266 75% 65% / 0.3);
     --shadow-glow-cyan: 0 0 40px hsl(188 80% 44% / 0.3);
     --shadow-elegant: 0 10px 30px -10px hsl(222 47% 11% / 0.5);
-
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 }
 

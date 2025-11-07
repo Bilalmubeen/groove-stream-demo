@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Music, Play, Trash2, ListPlus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { CollaboratorsDialog } from '@/components/Playlist/CollaboratorsDialog';
+import { PlaylistActivityFeed } from '@/components/Playlist/PlaylistActivityFeed';
 import {
   Tooltip,
   TooltipContent,
@@ -19,6 +23,7 @@ interface PlaylistDetails {
   cover_path: string | null;
   creator_id: string;
   created_at: string;
+  is_collaborative: boolean;
 }
 
 interface PlaylistItem {
@@ -43,17 +48,21 @@ export default function Playlist() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [collaborators, setCollaborators] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     loadCurrentUser();
   }, []);
 
   useEffect(() => {
-    if (id) {
+    if (id && currentUserId) {
       fetchPlaylist();
       fetchPlaylistItems();
+      fetchCollaborators();
+      checkUserRole();
     }
-  }, [id]);
+  }, [id, currentUserId]);
 
   const loadCurrentUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -104,9 +113,40 @@ export default function Playlist() {
     }
   };
 
+  const fetchCollaborators = async () => {
+    try {
+      const { data } = await supabase
+        .from('playlist_collaborators')
+        .select('*, profiles:user_id(username, avatar_url)')
+        .eq('playlist_id', id)
+        .limit(5);
+      
+      setCollaborators(data || []);
+    } catch (error) {
+      console.error('Error fetching collaborators:', error);
+    }
+  };
+
+  const checkUserRole = async () => {
+    if (!currentUserId || !id) return;
+    
+    const { data } = await supabase
+      .from('playlist_collaborators')
+      .select('role')
+      .eq('playlist_id', id)
+      .eq('user_id', currentUserId)
+      .single();
+    
+    setUserRole(data?.role || null);
+  };
+
   const removeFromPlaylist = async (snippetId: string) => {
     try {
       setRemovingId(snippetId);
+      
+      // Find the snippet title for activity log
+      const removedItem = items.find(i => i.snippet_id === snippetId);
+      
       const { error } = await supabase
         .from('playlist_items')
         .delete()
@@ -114,6 +154,16 @@ export default function Playlist() {
         .eq('snippet_id', snippetId);
 
       if (error) throw error;
+
+      // Log activity
+      if (currentUserId) {
+        await supabase.from('playlist_activity').insert({
+          playlist_id: id,
+          user_id: currentUserId,
+          action: 'removed_snippet',
+          metadata: { snippet_title: removedItem?.snippet.title }
+        });
+      }
 
       toast({
         title: 'Success',
@@ -134,6 +184,7 @@ export default function Playlist() {
   };
 
   const isOwner = playlist && currentUserId === playlist.creator_id;
+  const canEdit = isOwner || userRole === 'admin' || userRole === 'editor';
 
   if (loading) {
     return (
@@ -185,16 +236,40 @@ export default function Playlist() {
 
             {/* Playlist Info */}
             <div className="flex-1 pb-4">
-              <p className="text-sm font-medium mb-2">Playlist</p>
+              <div className="flex items-center gap-2 mb-2">
+                <p className="text-sm font-medium">Playlist</p>
+                {playlist.is_collaborative && (
+                  <Badge variant="secondary">Collaborative</Badge>
+                )}
+              </div>
               <h1 className="text-5xl font-bold mb-4">{playlist.title}</h1>
               {playlist.description && (
                 <p className="text-muted-foreground mb-4">{playlist.description}</p>
               )}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <p className="text-sm text-muted-foreground">
                   {items.length} {items.length === 1 ? 'snippet' : 'snippets'}
                 </p>
-                {isOwner && (
+                
+                {/* Collaborator avatars */}
+                {collaborators.length > 0 && (
+                  <div className="flex -space-x-2">
+                    {collaborators.map((collab: any) => (
+                      <Avatar key={collab.id} className="h-6 w-6 border-2 border-background">
+                        <AvatarImage src={collab.profiles?.avatar_url} />
+                        <AvatarFallback className="text-xs">
+                          {collab.profiles?.username?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    ))}
+                  </div>
+                )}
+                
+                {(isOwner || userRole === 'admin') && (
+                  <CollaboratorsDialog playlistId={id!} isOwner={!!isOwner} />
+                )}
+                
+                {canEdit && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -211,21 +286,21 @@ export default function Playlist() {
         </div>
       </div>
 
-      {/* Playlist Items */}
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Music className="w-10 h-10 text-muted-foreground" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main content - Playlist items */}
+          <div className="lg:col-span-2">{items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Music className="w-10 h-10 text-muted-foreground" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No snippets in this playlist</h3>
+              <p className="text-muted-foreground max-w-sm">
+                Add snippets to start building your playlist.
+              </p>
             </div>
-            <h3 className="text-xl font-semibold mb-2">No snippets in this playlist</h3>
-            <p className="text-muted-foreground max-w-sm">
-              Add snippets to start building your playlist.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {items.map((item, index) => (
+          ) : (
+            <div className="space-y-2">{items.map((item, index) => (
               <Card
                 key={item.snippet_id}
                 className="p-4 hover:bg-muted/50 transition-colors group"
@@ -262,7 +337,7 @@ export default function Playlist() {
                     </p>
                   </div>
 
-                  {isOwner && (
+                  {canEdit && (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -288,9 +363,18 @@ export default function Playlist() {
                   )}
                 </div>
               </Card>
-            ))}
-          </div>
-        )}
+            ))}</div>
+          )}</div>
+
+          {/* Sidebar - Activity Feed */}
+          {playlist.is_collaborative && (
+            <div className="lg:col-span-1">
+              <Card className="p-4 sticky top-4">
+                <PlaylistActivityFeed playlistId={id!} />
+              </Card>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

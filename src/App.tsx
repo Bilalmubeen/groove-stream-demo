@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginPage from "./components/Auth/LoginPage";
@@ -16,6 +17,7 @@ import FollowersList from "./pages/FollowersList";
 import Messages from "./pages/Messages";
 import Explore from "./pages/Explore";
 import Playlist from "./pages/Playlist";
+import PlaylistInvite from "./pages/PlaylistInvite";
 import { AudioProvider } from "./contexts/AudioContext";
 import { GlobalUploadCTA } from "./components/Upload/GlobalUploadCTA";
 import Profile from "./pages/Profile";
@@ -28,36 +30,39 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AudioProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Feed />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/u/:handle/followers" element={<FollowersList />} />
-            <Route path="/messages" element={<Messages />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/upload" element={<Upload />} />
-            <Route path="/playlist/:id" element={<Playlist />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/u/:handle" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/analytics/snippet/:id" element={<SnippetAnalytics />} />
-            <Route path="/profile/snippets/:id/variants" element={<VariantManagement />} />
-            <Route path="/welcome" element={<Index />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/privacy" element={<Privacy />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AudioProvider>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <AudioProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Feed />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/u/:handle/followers" element={<FollowersList />} />
+              <Route path="/messages" element={<Messages />} />
+              <Route path="/explore" element={<Explore />} />
+              <Route path="/upload" element={<Upload />} />
+              <Route path="/playlist/:id" element={<Playlist />} />
+              <Route path="/playlist/:id/invite/:token" element={<PlaylistInvite />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/u/:handle" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/analytics/snippet/:id" element={<SnippetAnalytics />} />
+              <Route path="/profile/snippets/:id/variants" element={<VariantManagement />} />
+              <Route path="/welcome" element={<Index />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AudioProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

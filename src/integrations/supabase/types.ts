@@ -473,6 +473,123 @@ export type Database = {
           },
         ]
       }
+      playlist_activity: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          playlist_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          playlist_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          playlist_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_activity_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlist_collaborators: {
+        Row: {
+          accepted_at: string | null
+          id: string
+          invited_at: string | null
+          invited_by: string | null
+          playlist_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          playlist_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          id?: string
+          invited_at?: string | null
+          invited_by?: string | null
+          playlist_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_collaborators_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlist_invites: {
+        Row: {
+          accepted: boolean | null
+          created_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          invited_by: string
+          playlist_id: string
+          role: string
+          token: string | null
+        }
+        Insert: {
+          accepted?: boolean | null
+          created_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          invited_by: string
+          playlist_id: string
+          role: string
+          token?: string | null
+        }
+        Update: {
+          accepted?: boolean | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string
+          playlist_id?: string
+          role?: string
+          token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_invites_playlist_id_fkey"
+            columns: ["playlist_id"]
+            isOneToOne: false
+            referencedRelation: "playlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       playlist_items: {
         Row: {
           created_at: string | null
@@ -511,11 +628,13 @@ export type Database = {
       }
       playlists: {
         Row: {
+          allow_suggestions: boolean | null
           cover_path: string | null
           created_at: string | null
           creator_id: string | null
           description: string | null
           id: string
+          is_collaborative: boolean | null
           is_public: boolean | null
           likes_count: number | null
           saves_count: number | null
@@ -523,11 +642,13 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          allow_suggestions?: boolean | null
           cover_path?: string | null
           created_at?: string | null
           creator_id?: string | null
           description?: string | null
           id?: string
+          is_collaborative?: boolean | null
           is_public?: boolean | null
           likes_count?: number | null
           saves_count?: number | null
@@ -535,11 +656,13 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          allow_suggestions?: boolean | null
           cover_path?: string | null
           created_at?: string | null
           creator_id?: string | null
           description?: string | null
           id?: string
+          is_collaborative?: boolean | null
           is_public?: boolean | null
           likes_count?: number | null
           saves_count?: number | null
@@ -681,10 +804,13 @@ export type Database = {
           cta_url: string | null
           draft: boolean | null
           duration: number
+          edit_metadata: Json | null
+          edited: boolean | null
           genre: Database["public"]["Enums"]["music_genre"]
           hook_start_ms: number | null
           id: string
           likes: number
+          original_audio_url: string | null
           rejection_reason: string | null
           scheduled_at: string | null
           search_vector: unknown
@@ -705,10 +831,13 @@ export type Database = {
           cta_url?: string | null
           draft?: boolean | null
           duration: number
+          edit_metadata?: Json | null
+          edited?: boolean | null
           genre: Database["public"]["Enums"]["music_genre"]
           hook_start_ms?: number | null
           id?: string
           likes?: number
+          original_audio_url?: string | null
           rejection_reason?: string | null
           scheduled_at?: string | null
           search_vector?: unknown
@@ -729,10 +858,13 @@ export type Database = {
           cta_url?: string | null
           draft?: boolean | null
           duration?: number
+          edit_metadata?: Json | null
+          edited?: boolean | null
           genre?: Database["public"]["Enums"]["music_genre"]
           hook_start_ms?: number | null
           id?: string
           likes?: number
+          original_audio_url?: string | null
           rejection_reason?: string | null
           scheduled_at?: string | null
           search_vector?: unknown
