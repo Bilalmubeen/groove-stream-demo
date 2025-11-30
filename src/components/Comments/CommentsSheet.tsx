@@ -136,7 +136,7 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
   };
 
   const handleSubmit = async () => {
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || !currentUserId) return;
 
     setIsLoading(true);
     try {
@@ -153,16 +153,20 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
 
       if (error) throw error;
 
-      // Store mentions
+      // Store mentions (don't block comment posting if this fails)
       if (mentionedUserIds.length > 0 && commentData) {
-        await supabase
-          .from("mentions")
-          .insert(
-            mentionedUserIds.map(userId => ({
-              comment_id: commentData.id,
-              mentioned_user_id: userId
-            }))
-          );
+        try {
+          await supabase
+            .from("mentions")
+            .insert(
+              mentionedUserIds.map(userId => ({
+                comment_id: commentData.id,
+                mentioned_user_id: userId
+              }))
+            );
+        } catch (mentionError) {
+          console.error("Failed to store mentions:", mentionError);
+        }
       }
 
       setNewComment("");
@@ -170,6 +174,7 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
       setMentionedUserIds([]);
       toast.success("Comment posted!");
     } catch (error) {
+      console.error("Failed to post comment:", error);
       toast.error("Failed to post comment");
     } finally {
       setIsLoading(false);
@@ -322,7 +327,7 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
           />
           <Button
             onClick={handleSubmit}
-            disabled={isLoading || !newComment.trim()}
+            disabled={isLoading || !newComment.trim() || !currentUserId}
             size="icon"
             className="flex-shrink-0 self-end"
           >
