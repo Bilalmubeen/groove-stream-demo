@@ -366,6 +366,66 @@ export type Database = {
           },
         ]
       }
+      hashtags: {
+        Row: {
+          created_at: string | null
+          id: string
+          tag: string
+          updated_at: string | null
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          tag: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          tag?: string
+          updated_at?: string | null
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
+      mentions: {
+        Row: {
+          comment_id: string
+          created_at: string | null
+          id: string
+          mentioned_user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string | null
+          id?: string
+          mentioned_user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string | null
+          id?: string
+          mentioned_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mentions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentions_mentioned_user_id_fkey"
+            columns: ["mentioned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           conversation_id: string
@@ -751,6 +811,39 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      snippet_hashtags: {
+        Row: {
+          created_at: string | null
+          hashtag_id: string
+          snippet_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          hashtag_id: string
+          snippet_id: string
+        }
+        Update: {
+          created_at?: string | null
+          hashtag_id?: string
+          snippet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "snippet_hashtags_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "snippet_hashtags_snippet_id_fkey"
+            columns: ["snippet_id"]
+            isOneToOne: false
+            referencedRelation: "snippets"
             referencedColumns: ["id"]
           },
         ]

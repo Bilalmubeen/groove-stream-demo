@@ -132,6 +132,7 @@ export default function Notifications() {
         break;
       case 'like':
       case 'comment':
+      case 'mention':
         if (notification.snippet_id) {
           navigate(`/?snippet=${notification.snippet_id}`);
         }
@@ -147,6 +148,7 @@ export default function Notifications() {
       case 'follow': return <UserPlus className="w-5 h-5 text-primary" />;
       case 'like': return <Heart className="w-5 h-5 text-red-500" />;
       case 'comment': return <MessageCircle className="w-5 h-5 text-blue-500" />;
+      case 'mention': return <MessageCircle className="w-5 h-5 text-orange-500" />;
       case 'message': return <MessageCircle className="w-5 h-5 text-green-500" />;
       case 'playlist_save': return <Bookmark className="w-5 h-5 text-purple-500" />;
       default: return <Music className="w-5 h-5 text-muted-foreground" />;
@@ -162,6 +164,8 @@ export default function Notifications() {
         return `${username} liked your snippet "${notification.snippets?.title}"`;
       case 'comment':
         return `${username} commented on "${notification.snippets?.title}"`;
+      case 'mention':
+        return `${username} mentioned you in a comment`;
       case 'message':
         return `${username} sent you a message`;
       case 'playlist_save':

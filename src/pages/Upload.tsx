@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { AudioEditor } from '@/components/Upload/AudioEditor';
+import { HashtagInput } from '@/components/Upload/HashtagInput';
 import { Upload as UploadIcon, Music, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -20,6 +20,7 @@ export default function Upload() {
   
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState('');
+  const [hashtags, setHashtags] = useState<string[]>([]);
   const [coverImage, setCoverImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -132,6 +133,7 @@ export default function Upload() {
         body: JSON.stringify({
           title,
           tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+          hashtags,
           audio_url: audioPublicUrl.publicUrl,
           cover_image_url: coverUrl,
           original_audio_url: originalUrl,
@@ -142,6 +144,25 @@ export default function Upload() {
       });
 
       if (!response.ok) throw new Error('Upload failed');
+
+      // Create hashtags and link them
+      if (hashtags.length > 0) {
+        const snippetId = (await response.json()).id;
+        for (const tag of hashtags) {
+          // Insert or get existing hashtag
+          const { data: hashtagData } = await supabase
+            .from('hashtags')
+            .upsert({ tag }, { onConflict: 'tag' })
+            .select()
+            .single();
+
+          if (hashtagData) {
+            await supabase
+              .from('snippet_hashtags')
+              .insert({ snippet_id: snippetId, hashtag_id: hashtagData.id });
+          }
+        }
+      }
 
       toast.success('Snippet uploaded successfully!');
       navigate('/profile');
@@ -242,6 +263,16 @@ export default function Upload() {
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="hip-hop, beats, trap"
+              />
+            </div>
+
+            <div>
+              <Label>Hashtags</Label>
+              <HashtagInput
+                hashtags={hashtags}
+                onChange={setHashtags}
+                maxHashtags={10}
+                placeholder="Add hashtags (press Enter)..."
               />
             </div>
 

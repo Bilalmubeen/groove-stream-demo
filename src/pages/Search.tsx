@@ -20,6 +20,7 @@ export default function Search() {
   const [playlists, setPlaylists] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const { play } = useAudio();
+  const [isHashtagSearch, setIsHashtagSearch] = useState(false);
 
   // Debounce search query
   useEffect(() => {
@@ -50,9 +51,15 @@ export default function Search() {
 
   const performSearch = async (searchQuery: string) => {
     setIsSearching(true);
+    
+    // Check if it's a hashtag search
+    const isHashtag = searchQuery.startsWith('#');
+    setIsHashtagSearch(isHashtag);
+    const cleanQuery = isHashtag ? searchQuery.slice(1) : searchQuery;
+
     try {
       // Search tracks
-      const { data: tracksData } = await supabase
+      let tracksQuery = supabase
         .from("snippets")
         .select(`
           *,
@@ -61,14 +68,57 @@ export default function Search() {
             user_id
           )
         `)
-        .eq("status", "approved")
-        .or(`title.ilike.%${searchQuery}%,genre.ilike.%${searchQuery}%`)
-        .limit(20);
+        .eq("status", "approved");
+
+      if (isHashtag) {
+        // Search by hashtag
+        const { data: hashtagData } = await supabase
+          .from("hashtags")
+          .select("id")
+          .eq("tag", cleanQuery.toLowerCase())
+          .single();
+
+        if (hashtagData) {
+          const { data: snippetIds } = await supabase
+            .from("snippet_hashtags")
+            .select("snippet_id")
+            .eq("hashtag_id", hashtagData.id);
+
+          if (snippetIds && snippetIds.length > 0) {
+            tracksQuery = tracksQuery.in("id", snippetIds.map(s => s.snippet_id));
+          } else {
+            setTracks([]);
+            setUsers([]);
+            setPlaylists([]);
+            setIsSearching(false);
+            return;
+          }
+        } else {
+          setTracks([]);
+          setUsers([]);
+          setPlaylists([]);
+          setIsSearching(false);
+          return;
+        }
+      } else {
+        // Regular search
+        tracksQuery = tracksQuery.or(`title.ilike.%${cleanQuery}%,genre.ilike.%${cleanQuery}%`);
+      }
+
+      const { data: tracksData } = await tracksQuery.limit(20);
 
       setTracks(tracksData?.map(s => ({
         ...s,
         artist_name: s.artist_profiles.artist_name
       })) || []);
+
+      // Don't search users/playlists for hashtag searches
+      if (isHashtag) {
+        setUsers([]);
+        setPlaylists([]);
+        setIsSearching(false);
+        return;
+      }
 
       // Search users/profiles
       const { data: usersData } = await supabase
@@ -128,7 +178,7 @@ export default function Search() {
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="search"
-                placeholder="Search tracks, artists, playlists..."
+                placeholder="Search tracks, artists, playlists... Use # for hashtags"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-10"
