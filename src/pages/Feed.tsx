@@ -2,11 +2,10 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { SnippetCard } from "@/components/Feed/SnippetCard";
-import { SearchBar } from "@/components/Feed/SearchBar";
 import { NotificationBadge } from "@/components/Notifications/NotificationBadge";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { toast } from "sonner";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/beatseek-logo.png";
 import { useEngagement } from "@/hooks/useEngagement";
@@ -21,8 +20,6 @@ export default function Feed() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [interactions, setInteractions] = useState<Map<string, any>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState("all");
   const [feedFilter, setFeedFilter] = useState<"for-you" | "following">("for-you");
   const containerRef = useRef<HTMLDivElement>(null);
   const { trackEvent } = useEngagement();
@@ -99,19 +96,6 @@ export default function Feed() {
         }
 
         query = query.in("artist_id", followingIds);
-      }
-
-      // Apply genre filter
-      if (selectedGenre !== "all") {
-        query = query.eq("genre", selectedGenre as any);
-      }
-
-      // Apply search filter
-      if (searchQuery.trim()) {
-        query = query.textSearch("search_vector", searchQuery.trim(), {
-          type: "websearch",
-          config: "english",
-        });
       }
 
       const { data, error } = await query
@@ -207,7 +191,7 @@ export default function Feed() {
       setIsLoading(true);
       fetchSnippets();
     }
-  }, [searchQuery, selectedGenre, feedFilter]);
+  }, [feedFilter]);
 
   const handleLike = async (snippetId: string) => {
     if (!user) return;
@@ -357,6 +341,14 @@ export default function Feed() {
           <h1 className={cn("text-lg md:text-xl font-bold gradient-text", isMobile && "flex-1")}>BeatSeek</h1>
           <div className="flex items-center gap-1 md:gap-2">
             <NotificationBadge />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/search")}
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
             {!isMobile && (
               <>
                 <Button
@@ -399,13 +391,6 @@ export default function Feed() {
             Following
           </Button>
         </div>
-
-        <SearchBar
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-          selectedGenre={selectedGenre}
-          onGenreChange={setSelectedGenre}
-        />
       </header>
 
       {/* Feed */}
