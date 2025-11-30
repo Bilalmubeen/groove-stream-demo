@@ -134,7 +134,7 @@ export function MentionTextarea({
   };
 
   return (
-    <div className="relative">
+    <div className="relative" style={{ pointerEvents: 'auto' }}>
       <Textarea
         ref={textareaRef}
         value={value}
@@ -142,6 +142,7 @@ export function MentionTextarea({
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={className}
+        style={{ pointerEvents: 'auto' }}
       />
 
       {showSuggestions && suggestions.length > 0 && (
