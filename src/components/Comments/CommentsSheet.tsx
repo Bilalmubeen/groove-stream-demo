@@ -4,13 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageCircle, Pin, Heart, Send } from "lucide-react";
+import { MessageCircle, Pin, Send } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { useEngagement } from "@/hooks/useEngagement";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { MentionTextarea } from "./MentionTextarea";
 
 interface Comment {
   id: string;
@@ -44,6 +44,7 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState("");
+  const [mentionedUserIds, setMentionedUserIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (isOpen) {
@@ -139,20 +140,34 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
 
     setIsLoading(true);
     try {
-      const { error } = await supabase
+      const { data: commentData, error } = await supabase
         .from("comments")
         .insert({
           snippet_id: snippetId,
           user_id: currentUserId,
           text: newComment,
           parent_comment_id: replyingTo
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
-      // Don't track comment event via engagement - just update UI
+      // Store mentions
+      if (mentionedUserIds.length > 0 && commentData) {
+        await supabase
+          .from("mentions")
+          .insert(
+            mentionedUserIds.map(userId => ({
+              comment_id: commentData.id,
+              mentioned_user_id: userId
+            }))
+          );
+      }
+
       setNewComment("");
       setReplyingTo(null);
+      setMentionedUserIds([]);
       toast.success("Comment posted!");
     } catch (error) {
       toast.error("Failed to post comment");
@@ -223,7 +238,15 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
               <Pin className="w-3 h-3 text-primary" />
             )}
           </div>
-          <p className="text-sm mt-1">{comment.text}</p>
+          <p className="text-sm mt-1">
+            {comment.text.split(/(@\w+)/g).map((part, i) => 
+              part.startsWith('@') ? (
+                <span key={i} className="text-primary font-medium cursor-pointer hover:underline">
+                  {part}
+                </span>
+              ) : part
+            )}
+          </p>
 
           <div className="flex items-center gap-3 mt-2">
             {['🔥', '❤️', '😂'].map((emoji) => {
@@ -290,18 +313,18 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
           </div>
         )}
         <div className="flex gap-2">
-          <Textarea
+          <MentionTextarea
             value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Add a comment..."
-            className="resize-none"
-            rows={2}
+            onChange={setNewComment}
+            onMentionedUsers={setMentionedUserIds}
+            placeholder="Add a comment... Use @ to mention users"
+            className="resize-none min-h-[60px]"
           />
           <Button
             onClick={handleSubmit}
             disabled={isLoading || !newComment.trim()}
             size="icon"
-            className="flex-shrink-0"
+            className="flex-shrink-0 self-end"
           >
             <Send className="w-4 h-4" />
           </Button>
