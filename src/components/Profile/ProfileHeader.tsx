@@ -139,6 +139,70 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
     }
   };
 
+  const handleMessage = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: 'Please sign in to message',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Check if conversation already exists
+      const { data: existingMembers } = await supabase
+        .from('conversation_members')
+        .select('conversation_id')
+        .eq('user_id', user.id);
+
+      const myConversations = existingMembers?.map(m => m.conversation_id) || [];
+
+      if (myConversations.length > 0) {
+        // Check if any of these conversations include the other user
+        const { data: otherUserMemberships } = await supabase
+          .from('conversation_members')
+          .select('conversation_id')
+          .eq('user_id', userId)
+          .in('conversation_id', myConversations);
+
+        if (otherUserMemberships && otherUserMemberships.length > 0) {
+          // Conversation exists, navigate to it
+          navigate(`/messages?conversation=${otherUserMemberships[0].conversation_id}`);
+          return;
+        }
+      }
+
+      // Create new conversation
+      const { data: newConversation, error: convError } = await supabase
+        .from('conversations')
+        .insert({})
+        .select()
+        .single();
+
+      if (convError) throw convError;
+
+      // Add both users as members
+      const { error: membersError } = await supabase
+        .from('conversation_members')
+        .insert([
+          { conversation_id: newConversation.id, user_id: user.id },
+          { conversation_id: newConversation.id, user_id: userId }
+        ]);
+
+      if (membersError) throw membersError;
+
+      // Navigate to messages with new conversation
+      navigate(`/messages?conversation=${newConversation.id}`);
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      toast({
+        title: 'Error starting conversation',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -264,6 +328,7 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
                 </Button>
                 <Button
                   variant="outline"
+                  onClick={handleMessage}
                   size={isMobile ? "sm" : "default"}
                   className="flex-1 sm:flex-initial"
                 >
