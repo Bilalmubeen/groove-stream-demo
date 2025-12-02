@@ -49,6 +49,15 @@ export default function Messages() {
   }, []);
 
   useEffect(() => {
+    // Check for conversation ID in URL params
+    const params = new URLSearchParams(window.location.search);
+    const conversationId = params.get('conversation');
+    if (conversationId && conversations.length > 0) {
+      setSelectedConversation(conversationId);
+    }
+  }, [conversations]);
+
+  useEffect(() => {
     if (selectedConversation) {
       fetchMessages(selectedConversation);
       subscribeToMessages(selectedConversation);
