@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { ClickableText } from '@/components/ui/clickable-text';
 
 interface ProfileHeaderProps {
   userId: string;
@@ -198,7 +199,9 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
 
           {/* Bio */}
           {profile?.bio && (
-            <p className={cn("text-foreground max-w-md line-clamp-3", isMobile ? "text-xs" : "text-sm")}>{profile.bio}</p>
+            <div className={cn("text-foreground max-w-md line-clamp-3", isMobile ? "text-xs" : "text-sm")}>
+              <ClickableText text={profile.bio} />
+            </div>
           )}
 
           {/* Action Buttons */}
