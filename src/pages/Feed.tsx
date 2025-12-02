@@ -254,6 +254,8 @@ export default function Feed() {
           snippet_id: snippetId,
           saved: newSavedState,
           liked: currentInteraction?.liked || false,
+        }, {
+          onConflict: 'user_id,snippet_id'
         });
 
       if (error) throw error;
