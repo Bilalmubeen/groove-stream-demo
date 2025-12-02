@@ -138,10 +138,7 @@ export function MentionTextarea({
       <Textarea
         ref={textareaRef}
         value={value}
-        onChange={(e) => {
-          console.log('Textarea onChange:', e.target.value);
-          onChange(e.target.value);
-        }}
+        onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={className}
