@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -177,6 +177,20 @@ export default function Messages() {
           markMessagesAsRead(conversationId);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${conversationId}`
+        },
+        (payload) => {
+          setMessages(prev => prev.map(msg => 
+            msg.id === payload.new.id ? { ...msg, read: payload.new.read } : msg
+          ));
+        }
+      )
       .subscribe();
 
     return () => {
@@ -324,9 +338,20 @@ export default function Messages() {
                   >
                     <p className="text-sm">{message.text}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground mt-1">
-                    {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                  </span>
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
+                    </span>
+                    {message.sender_id === currentUserId && (
+                      <span className="text-muted-foreground">
+                        {message.read ? (
+                          <CheckCheck className="w-3 h-3 text-primary" />
+                        ) : (
+                          <Check className="w-3 h-3" />
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
