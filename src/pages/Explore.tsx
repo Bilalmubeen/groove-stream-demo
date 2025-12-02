@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, Music, Play, TrendingUp, Sparkles, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, Music, Play, TrendingUp, Sparkles, Hash } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAudio } from "@/contexts/AudioContext";
 
@@ -17,12 +18,19 @@ interface Snippet {
   genre: string;
 }
 
+interface TrendingHashtag {
+  id: string;
+  tag: string;
+  usage_count: number;
+}
+
 export default function Explore() {
   const navigate = useNavigate();
   const { play } = useAudio();
   const [trending, setTrending] = useState<Snippet[]>([]);
   const [emerging, setEmerging] = useState<Snippet[]>([]);
   const [byGenre, setByGenre] = useState<Record<string, Snippet[]>>({});
+  const [trendingHashtags, setTrendingHashtags] = useState<TrendingHashtag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -120,11 +128,24 @@ export default function Explore() {
         })) || [];
       }
       setByGenre(genreData);
+
+      // Fetch trending hashtags
+      const { data: hashtagsData } = await supabase
+        .from("hashtags")
+        .select("id, tag, usage_count")
+        .order("usage_count", { ascending: false })
+        .limit(12);
+
+      setTrendingHashtags(hashtagsData || []);
     } catch (error) {
       console.error("Error fetching explore data:", error);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleHashtagClick = (tag: string) => {
+    navigate(`/search?q=${encodeURIComponent('#' + tag)}`);
   };
 
   const SnippetCard = ({ snippet }: { snippet: Snippet }) => (
@@ -154,6 +175,32 @@ export default function Explore() {
         </div>
       </button>
     </Card>
+  );
+
+  const TrendingHashtagsWidget = () => (
+    <section>
+      <div className="flex items-center gap-2 mb-4">
+        <Hash className="w-5 h-5 text-primary" />
+        <h2 className="text-2xl font-bold">Trending Hashtags</h2>
+      </div>
+      {trendingHashtags.length > 0 ? (
+        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-4 md:overflow-visible">
+          {trendingHashtags.map((hashtag) => (
+            <Badge
+              key={hashtag.id}
+              variant="outline"
+              className="cursor-pointer hover:scale-105 hover:bg-primary hover:text-primary-foreground transition-all px-4 py-2 text-sm whitespace-nowrap"
+              onClick={() => handleHashtagClick(hashtag.tag)}
+            >
+              <span className="font-semibold">#{hashtag.tag}</span>
+              <span className="ml-2 text-xs opacity-70">{hashtag.usage_count}</span>
+            </Badge>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm">No trending hashtags yet</p>
+      )}
+    </section>
   );
 
   if (isLoading) {
@@ -189,6 +236,9 @@ export default function Explore() {
             ))}
           </div>
         </section>
+
+        {/* Trending Hashtags */}
+        <TrendingHashtagsWidget />
 
         {/* Emerging Artists */}
         <section>
