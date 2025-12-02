@@ -136,6 +136,7 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
   };
 
   const handleSubmit = async () => {
+    console.log('handleSubmit called, newComment:', newComment, 'currentUserId:', currentUserId);
     if (!newComment.trim() || !currentUserId) return;
 
     setIsLoading(true);
