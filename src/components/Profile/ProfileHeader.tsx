@@ -142,7 +142,6 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
   const handleMessage = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('Current user:', user);
       if (!user) {
         toast({
           title: 'Please sign in to message',
@@ -175,14 +174,12 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
       }
 
       // Create new conversation
-      console.log('Creating conversation...');
       const { data: newConversation, error: convError } = await supabase
         .from('conversations')
         .insert({})
         .select()
         .single();
 
-      console.log('Conversation creation result:', { newConversation, convError });
       if (convError) throw convError;
 
       // Add current user as member first
