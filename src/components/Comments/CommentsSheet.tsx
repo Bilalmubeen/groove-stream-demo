@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useEngagement } from "@/hooks/useEngagement";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MentionTextarea } from "./MentionTextarea";
+import { ClickableText } from "@/components/ui/clickable-text";
 
 interface Comment {
   id: string;
@@ -244,15 +245,9 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
               <Pin className="w-3 h-3 text-primary" />
             )}
           </div>
-          <p className="text-sm mt-1">
-            {comment.text.split(/(@\w+)/g).map((part, i) => 
-              part.startsWith('@') ? (
-                <span key={i} className="text-primary font-medium cursor-pointer hover:underline">
-                  {part}
-                </span>
-              ) : part
-            )}
-          </p>
+          <div className="text-sm mt-1">
+            <ClickableText text={comment.text} />
+          </div>
 
           <div className="flex items-center gap-3 mt-2">
             {['🔥', '❤️', '😂'].map((emoji) => {
