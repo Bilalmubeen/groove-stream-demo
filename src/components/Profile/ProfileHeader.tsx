@@ -182,15 +182,19 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
 
       if (convError) throw convError;
 
-      // Add both users as members
-      const { error: membersError } = await supabase
+      // Add current user as member first
+      const { error: currentUserError } = await supabase
         .from('conversation_members')
-        .insert([
-          { conversation_id: newConversation.id, user_id: user.id },
-          { conversation_id: newConversation.id, user_id: userId }
-        ]);
+        .insert({ conversation_id: newConversation.id, user_id: user.id });
 
-      if (membersError) throw membersError;
+      if (currentUserError) throw currentUserError;
+
+      // Then add other user as member
+      const { error: otherUserError } = await supabase
+        .from('conversation_members')
+        .insert({ conversation_id: newConversation.id, user_id: userId });
+
+      if (otherUserError) throw otherUserError;
 
       // Navigate to messages with new conversation
       navigate(`/messages?conversation=${newConversation.id}`);
