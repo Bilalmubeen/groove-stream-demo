@@ -129,3 +129,8 @@ All colors MUST be HSL.
 .safe-area-inset-top {
   padding-top: env(safe-area-inset-top);
 }
+
+/* Hide Lovable badge */
+#lovable-badge {
+  display: none !important;
+}
