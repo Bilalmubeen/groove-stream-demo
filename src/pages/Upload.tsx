@@ -339,7 +339,7 @@ export default function Upload() {
 
             <Button
               variant="ghost"
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
               className="mt-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
