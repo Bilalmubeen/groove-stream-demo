@@ -5,19 +5,34 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Slider } from '@/components/ui/slider';
 import { AudioEditor } from '@/components/Upload/AudioEditor';
 import { HashtagInput } from '@/components/Upload/HashtagInput';
-import { Upload as UploadIcon, Music, ArrowLeft } from 'lucide-react';
+import { YouTubePlayer } from '@/components/YouTube/YouTubePlayer';
+import { Upload as UploadIcon, Music, ArrowLeft, Youtube, Link } from 'lucide-react';
 import { toast } from 'sonner';
+import { extractYouTubeVideoId, isValidYouTubeUrl, getYouTubeThumbnail } from '@/lib/youtube';
+
+type UploadType = 'audio' | 'youtube';
 
 export default function Upload() {
   const navigate = useNavigate();
+  const [uploadType, setUploadType] = useState<UploadType>('audio');
   const [step, setStep] = useState<'upload' | 'edit' | 'details'>('upload');
+  
+  // Audio upload state
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState<string>('');
   const [editedAudio, setEditedAudio] = useState<Blob | null>(null);
   const [editMetadata, setEditMetadata] = useState<any>(null);
   
+  // YouTube state
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [youtubeVideoId, setYoutubeVideoId] = useState<string | null>(null);
+  const [youtubeStartSeconds, setYoutubeStartSeconds] = useState(0);
+  
+  // Common state
   const [title, setTitle] = useState('');
   const [tags, setTags] = useState('');
   const [hashtags, setHashtags] = useState<string[]>([]);
@@ -39,6 +54,23 @@ export default function Upload() {
     setStep('edit');
   };
 
+  const handleYoutubeUrlChange = (url: string) => {
+    setYoutubeUrl(url);
+    const videoId = extractYouTubeVideoId(url);
+    setYoutubeVideoId(videoId);
+    if (videoId) {
+      setYoutubeStartSeconds(0);
+    }
+  };
+
+  const handleYoutubeContinue = () => {
+    if (!youtubeVideoId) {
+      toast.error('Please enter a valid YouTube URL');
+      return;
+    }
+    setStep('details');
+  };
+
   const handleAudioSave = (blob: Blob, metadata: any) => {
     setEditedAudio(blob);
     setEditMetadata(metadata);
@@ -53,7 +85,12 @@ export default function Upload() {
   };
 
   const handleFinalUpload = async () => {
-    if (!editedAudio || !title) {
+    if (uploadType === 'audio' && (!editedAudio || !title)) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    if (uploadType === 'youtube' && (!youtubeVideoId || !title)) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -79,11 +116,35 @@ export default function Upload() {
         return;
       }
 
-      // Upload audio file
+      if (uploadType === 'youtube') {
+        // Insert YouTube snippet directly
+        const { error: dbError } = await supabase
+          .from('snippets')
+          .insert({
+            artist_id: artistData.id,
+            title,
+            media_type: 'youtube',
+            youtube_video_id: youtubeVideoId,
+            youtube_start_seconds: youtubeStartSeconds,
+            cover_image_url: getYouTubeThumbnail(youtubeVideoId!, 'high'),
+            duration: 30,
+            status: 'approved',
+            genre: 'other',
+            tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+          });
+
+        if (dbError) throw dbError;
+
+        toast.success('YouTube snippet uploaded successfully!');
+        navigate('/profile');
+        return;
+      }
+
+      // Audio upload flow
       const audioFileName = `${Date.now()}_${title.replace(/\s/g, '_')}.wav`;
       const { data: audioUploadData, error: audioError } = await supabase.storage
         .from('snippets')
-        .upload(audioFileName, editedAudio);
+        .upload(audioFileName, editedAudio!);
 
       if (audioError) throw audioError;
 
@@ -139,7 +200,8 @@ export default function Upload() {
           original_audio_url: originalUrl,
           edited: !!editMetadata,
           edit_metadata: editMetadata,
-          duration: Math.round(editMetadata?.originalDuration || 30)
+          duration: Math.round(editMetadata?.originalDuration || 30),
+          media_type: 'audio'
         })
       });
 
@@ -149,7 +211,6 @@ export default function Upload() {
       if (hashtags.length > 0) {
         const snippetId = (await response.json()).id;
         for (const tag of hashtags) {
-          // Insert or get existing hashtag
           const { data: hashtagData } = await supabase
             .from('hashtags')
             .upsert({ tag }, { onConflict: 'tag' })
@@ -184,26 +245,98 @@ export default function Upload() {
               Upload Snippet
             </CardTitle>
             <CardDescription>
-              Upload your 30-second audio snippet and customize it with our editor
+              Upload your 30-second audio snippet or share a YouTube clip
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary transition-colors">
-              <input
-                type="file"
-                accept="audio/*"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="audio-upload"
-              />
-              <label htmlFor="audio-upload" className="cursor-pointer">
-                <UploadIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-lg font-semibold mb-2">Click to upload audio</p>
-                <p className="text-sm text-muted-foreground">
-                  MP3, WAV, or other audio formats (max 30 seconds)
-                </p>
-              </label>
-            </div>
+            <Tabs value={uploadType} onValueChange={(v) => setUploadType(v as UploadType)} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="audio" className="flex items-center gap-2">
+                  <Music className="h-4 w-4" />
+                  Upload Audio
+                </TabsTrigger>
+                <TabsTrigger value="youtube" className="flex items-center gap-2">
+                  <Youtube className="h-4 w-4" />
+                  YouTube Link
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="audio">
+                <div className="border-2 border-dashed border-border rounded-lg p-12 text-center hover:border-primary transition-colors">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="audio-upload"
+                  />
+                  <label htmlFor="audio-upload" className="cursor-pointer">
+                    <UploadIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                    <p className="text-lg font-semibold mb-2">Click to upload audio</p>
+                    <p className="text-sm text-muted-foreground">
+                      MP3, WAV, or other audio formats (max 30 seconds)
+                    </p>
+                  </label>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="youtube" className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="youtube-url">YouTube URL</Label>
+                  <div className="relative">
+                    <Link className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="youtube-url"
+                      value={youtubeUrl}
+                      onChange={(e) => handleYoutubeUrlChange(e.target.value)}
+                      placeholder="https://youtube.com/watch?v=..."
+                      className="pl-10"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Paste a YouTube video URL - only 30 seconds will be playable
+                  </p>
+                </div>
+
+                {youtubeVideoId && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg overflow-hidden">
+                      <YouTubePlayer
+                        videoId={youtubeVideoId}
+                        startSeconds={youtubeStartSeconds}
+                        maxDuration={30}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Start Time: {Math.floor(youtubeStartSeconds / 60)}:{(youtubeStartSeconds % 60).toString().padStart(2, '0')}</Label>
+                      <Slider
+                        value={[youtubeStartSeconds]}
+                        onValueChange={([value]) => setYoutubeStartSeconds(value)}
+                        min={0}
+                        max={300}
+                        step={1}
+                        className="w-full"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Select where the 30-second clip should start (max 5 minutes into video)
+                      </p>
+                    </div>
+
+                    <Button onClick={handleYoutubeContinue} className="w-full">
+                      Continue to Details
+                    </Button>
+                  </div>
+                )}
+
+                {!youtubeVideoId && youtubeUrl && !isValidYouTubeUrl(youtubeUrl) && (
+                  <p className="text-sm text-destructive">
+                    Please enter a valid YouTube URL
+                  </p>
+                )}
+              </TabsContent>
+            </Tabs>
+
             <Button
               variant="ghost"
               onClick={() => navigate(-1)}
@@ -218,7 +351,7 @@ export default function Upload() {
     );
   }
 
-  if (step === 'edit') {
+  if (step === 'edit' && uploadType === 'audio') {
     return (
       <div className="min-h-screen p-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -246,6 +379,16 @@ export default function Upload() {
             <CardDescription>Add information about your snippet</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {uploadType === 'youtube' && youtubeVideoId && (
+              <div className="rounded-lg overflow-hidden mb-4">
+                <YouTubePlayer
+                  videoId={youtubeVideoId}
+                  startSeconds={youtubeStartSeconds}
+                  maxDuration={30}
+                />
+              </div>
+            )}
+
             <div>
               <Label htmlFor="title">Title *</Label>
               <Input
@@ -276,23 +419,25 @@ export default function Upload() {
               />
             </div>
 
-            <div>
-              <Label htmlFor="cover">Cover Image</Label>
-              <Input
-                id="cover"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
-              />
-            </div>
+            {uploadType === 'audio' && (
+              <div>
+                <Label htmlFor="cover">Cover Image</Label>
+                <Input
+                  id="cover"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setCoverImage(e.target.files?.[0] || null)}
+                />
+              </div>
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button
                 variant="outline"
-                onClick={() => setStep('edit')}
+                onClick={() => setStep(uploadType === 'audio' ? 'edit' : 'upload')}
                 className="flex-1"
               >
-                Back to Editor
+                {uploadType === 'audio' ? 'Back to Editor' : 'Back'}
               </Button>
               <Button
                 onClick={handleFinalUpload}
