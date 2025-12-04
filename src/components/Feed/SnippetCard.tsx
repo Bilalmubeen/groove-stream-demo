@@ -6,7 +6,6 @@ import { useEngagement } from "@/hooks/useEngagement";
 import { useAudio } from "@/contexts/AudioContext";
 import { CommentsSheet } from "@/components/Comments/CommentsSheet";
 import { AddToPlaylistDialog } from "@/components/Playlist/AddToPlaylistDialog";
-import { YouTubePlayer } from "@/components/YouTube/YouTubePlayer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeable } from "react-swipeable";
 
@@ -44,8 +43,6 @@ export function SnippetCard({
   isSaved,
   isArtist = false,
 }: SnippetCardProps) {
-  const [hasTracked3s, setHasTracked3s] = useState(false);
-  const [hasTrackedComplete, setHasTrackedComplete] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [addToPlaylistOpen, setAddToPlaylistOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -56,7 +53,6 @@ export function SnippetCard({
   const isYouTube = snippet.media_type === 'youtube';
   const isPlaying = !isYouTube && isAudioPlaying(snippet.id);
 
-  // Swipe handlers for mobile navigation
   const swipeHandlers = useSwipeable({
     onSwipedUp: () => {
       if (isMobile && cardRef.current) {
@@ -72,7 +68,6 @@ export function SnippetCard({
     trackTouch: true,
   });
 
-  // Auto-play when card becomes active and visible (audio only)
   useEffect(() => {
     if (!cardRef.current || isYouTube) return;
 
@@ -95,7 +90,6 @@ export function SnippetCard({
 
   const togglePlayPause = useCallback(() => {
     if (isYouTube || !snippet.audio_url) return;
-    
     if (isPlaying) {
       pause();
     } else {
@@ -110,10 +104,6 @@ export function SnippetCard({
     }
   }, [snippet.id, snippet.cta_url]);
 
-  const handleYouTubeComplete = useCallback(() => {
-    trackEvent(snippet.id, 'complete');
-  }, [snippet.id, trackEvent]);
-
   const ctaLabel = {
     'full_track': 'Listen to Full Track',
     'presave': 'Pre-Save',
@@ -121,205 +111,77 @@ export function SnippetCard({
     'custom': 'Learn More'
   }[snippet.cta_type || 'custom'] || 'Learn More';
 
-
   return (
     <div 
       {...swipeHandlers}
       ref={cardRef}
       className="relative h-screen w-full snap-start snap-always flex items-center justify-center bg-gradient-to-br from-background via-card to-background"
     >
-      {/* Background gradient glow */}
-      <div 
-        className="absolute inset-0 opacity-20"
-        style={{ background: "var(--gradient-glow)" }}
-      />
-
-      {/* Cover image background */}
+      <div className="absolute inset-0 opacity-20" style={{ background: "var(--gradient-glow)" }} />
       {snippet.cover_image_url && (
-        <div 
-          className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30"
-          style={{ backgroundImage: `url(${snippet.cover_image_url})` }}
-        />
+        <div className="absolute inset-0 bg-cover bg-center blur-3xl opacity-30" style={{ backgroundImage: `url(${snippet.cover_image_url})` }} />
       )}
 
-      {/* Content */}
       <div className="relative z-10 w-full max-w-2xl mx-auto px-4 md:px-6 flex flex-col items-center">
-        {/* YouTube Player or Album Art */}
-        {isYouTube && snippet.youtube_video_id ? (
-          <div className={cn("mb-6 md:mb-8 w-full", isMobile ? "max-w-[320px]" : "max-w-[400px]")}>
-            <YouTubePlayer
-              videoId={snippet.youtube_video_id}
-              startSeconds={snippet.youtube_start_seconds || 0}
-              maxDuration={30}
-              autoPlay={isActive}
-              onComplete={handleYouTubeComplete}
-            />
-          </div>
-        ) : (
-          <div className="relative mb-6 md:mb-8">
-            <div className={cn(
-              "rounded-3xl overflow-hidden shadow-2xl animate-pulse-glow",
-              isMobile ? "w-64 h-64" : "w-80 h-80"
-            )}>
-              {snippet.cover_image_url ? (
-                <img 
-                  src={snippet.cover_image_url} 
-                  alt={snippet.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                  <Music className="w-32 h-32 text-primary-foreground opacity-50" />
-                </div>
-              )}
-            </div>
-
-            {/* Play/Pause button overlay - only for audio */}
-            {!isYouTube && (
-              <Button
-                onClick={togglePlayPause}
-                size={isMobile ? "default" : "lg"}
-                className={cn(
-                  "absolute rounded-full bg-primary/90 hover:bg-primary shadow-xl",
-                  isMobile ? "bottom-3 right-3 w-12 h-12" : "bottom-4 right-4 w-16 h-16"
-                )}
-              >
-                {isPlaying ? (
-                  <Pause className={isMobile ? "w-5 h-5" : "w-8 h-8"} />
-                ) : (
-                  <Play className={cn(isMobile ? "w-5 h-5 ml-0.5" : "w-8 h-8 ml-1")} />
-                )}
-              </Button>
+        <div className="relative mb-6 md:mb-8">
+          <div className={cn("rounded-3xl overflow-hidden shadow-2xl animate-pulse-glow", isMobile ? "w-64 h-64" : "w-80 h-80")}>
+            {snippet.cover_image_url ? (
+              <img src={snippet.cover_image_url} alt={snippet.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <Music className="w-32 h-32 text-primary-foreground opacity-50" />
+              </div>
             )}
           </div>
-        )}
+          {!isYouTube && (
+            <Button onClick={togglePlayPause} size={isMobile ? "default" : "lg"} className={cn("absolute rounded-full bg-primary/90 hover:bg-primary shadow-xl", isMobile ? "bottom-3 right-3 w-12 h-12" : "bottom-4 right-4 w-16 h-16")}>
+              {isPlaying ? <Pause className={isMobile ? "w-5 h-5" : "w-8 h-8"} /> : <Play className={cn(isMobile ? "w-5 h-5 ml-0.5" : "w-8 h-8 ml-1")} />}
+            </Button>
+          )}
+        </div>
 
-        {/* Track Info */}
         <div className="text-center mb-6 md:mb-8 space-y-2">
           <h2 className={cn("font-bold text-foreground", isMobile ? "text-2xl" : "text-3xl")}>{snippet.title}</h2>
           <p className={cn("text-muted-foreground", isMobile ? "text-lg" : "text-xl")}>{snippet.artist_name}</p>
-          <span className={cn("inline-block px-3 md:px-4 py-1 rounded-full bg-primary/20 text-primary font-medium", isMobile ? "text-xs" : "text-sm")}>
-            {snippet.genre}
-          </span>
+          <span className={cn("inline-block px-3 md:px-4 py-1 rounded-full bg-primary/20 text-primary font-medium", isMobile ? "text-xs" : "text-sm")}>{snippet.genre}</span>
         </div>
 
-        {/* CTA Button */}
         {snippet.cta_type && snippet.cta_url && (
-          <Button
-            onClick={handleCTAClick}
-            className="mb-6 gap-2"
-            size="lg"
-            aria-label={ctaLabel}
-          >
-            <ExternalLink className="w-4 h-4" />
-            {ctaLabel}
+          <Button onClick={handleCTAClick} className="mb-6 gap-2" size="lg" aria-label={ctaLabel}>
+            <ExternalLink className="w-4 h-4" />{ctaLabel}
           </Button>
         )}
 
-        {/* Action Buttons */}
         <div className={cn("flex items-center", isMobile ? "gap-4" : "gap-8")}>
-          <button
-            onClick={onLike}
-            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
-            aria-label={isLiked ? "Unlike" : "Like"}
-          >
-            <div className={cn(
-              "rounded-full flex items-center justify-center glass transition-colors",
-              isMobile ? "w-12 h-12" : "w-14 h-14",
-              isLiked && "bg-primary/30"
-            )}>
-              <Heart 
-                className={cn(
-                  "transition-all",
-                  isMobile ? "w-5 h-5" : "w-6 h-6",
-                  isLiked && "fill-primary text-primary scale-110"
-                )}
-              />
+          <button onClick={onLike} className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110" aria-label={isLiked ? "Unlike" : "Like"}>
+            <div className={cn("rounded-full flex items-center justify-center glass transition-colors", isMobile ? "w-12 h-12" : "w-14 h-14", isLiked && "bg-primary/30")}>
+              <Heart className={cn("transition-all", isMobile ? "w-5 h-5" : "w-6 h-6", isLiked && "fill-primary text-primary scale-110")} />
             </div>
-            <span className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>
-              {snippet.likes}
-            </span>
+            <span className={cn("text-muted-foreground", isMobile ? "text-xs" : "text-sm")}>{snippet.likes}</span>
           </button>
-
-          <button
-            onClick={onSave}
-            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
-            aria-label={isSaved ? "Remove from favorites" : "Add to favorites"}
-          >
-            <div className={cn(
-              "rounded-full flex items-center justify-center glass transition-colors",
-              isMobile ? "w-12 h-12" : "w-14 h-14",
-              isSaved && "bg-secondary/30"
-            )}>
-              <Bookmark 
-                className={cn(
-                  "transition-all",
-                  isMobile ? "w-5 h-5" : "w-6 h-6",
-                  isSaved && "fill-secondary text-secondary scale-110"
-                )}
-              />
+          <button onClick={onSave} className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110" aria-label={isSaved ? "Remove from favorites" : "Add to favorites"}>
+            <div className={cn("rounded-full flex items-center justify-center glass transition-colors", isMobile ? "w-12 h-12" : "w-14 h-14", isSaved && "bg-secondary/30")}>
+              <Bookmark className={cn("transition-all", isMobile ? "w-5 h-5" : "w-6 h-6", isSaved && "fill-secondary text-secondary scale-110")} />
             </div>
-            <span className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-sm")}>
-              {isMobile ? "Fav" : "Favorite"}
-            </span>
+            <span className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-sm")}>{isMobile ? "Fav" : "Favorite"}</span>
           </button>
-
-          <button
-            onClick={() => setAddToPlaylistOpen(true)}
-            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
-            aria-label="Add to playlist"
-          >
-            <div className={cn(
-              "rounded-full flex items-center justify-center glass",
-              isMobile ? "w-12 h-12" : "w-14 h-14"
-            )}>
-              <ListPlus className={isMobile ? "w-5 h-5" : "w-6 h-6"} />
-            </div>
+          <button onClick={() => setAddToPlaylistOpen(true)} className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110" aria-label="Add to playlist">
+            <div className={cn("rounded-full flex items-center justify-center glass", isMobile ? "w-12 h-12" : "w-14 h-14")}><ListPlus className={isMobile ? "w-5 h-5" : "w-6 h-6"} /></div>
             <span className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-sm")}>Playlist</span>
           </button>
-
-          <button
-            onClick={() => setCommentsOpen(true)}
-            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
-            aria-label="Comments"
-          >
-            <div className={cn(
-              "rounded-full flex items-center justify-center glass",
-              isMobile ? "w-12 h-12" : "w-14 h-14"
-            )}>
-              <MessageCircle className={isMobile ? "w-5 h-5" : "w-6 h-6"} />
-            </div>
+          <button onClick={() => setCommentsOpen(true)} className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110" aria-label="Comments">
+            <div className={cn("rounded-full flex items-center justify-center glass", isMobile ? "w-12 h-12" : "w-14 h-14")}><MessageCircle className={isMobile ? "w-5 h-5" : "w-6 h-6"} /></div>
             <span className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-sm")}>Comment</span>
           </button>
-
-          <button
-            onClick={onShare}
-            className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110"
-            aria-label="Share"
-          >
-            <div className={cn(
-              "rounded-full flex items-center justify-center glass",
-              isMobile ? "w-12 h-12" : "w-14 h-14"
-            )}>
-              <Share2 className={isMobile ? "w-5 h-5" : "w-6 h-6"} />
-            </div>
+          <button onClick={onShare} className="flex flex-col items-center gap-1 md:gap-2 transition-transform active:scale-95 md:hover:scale-110" aria-label="Share">
+            <div className={cn("rounded-full flex items-center justify-center glass", isMobile ? "w-12 h-12" : "w-14 h-14")}><Share2 className={isMobile ? "w-5 h-5" : "w-6 h-6"} /></div>
             <span className={cn("text-muted-foreground", isMobile ? "text-[10px]" : "text-sm")}>Share</span>
           </button>
         </div>
       </div>
 
-      <CommentsSheet
-        snippetId={snippet.id}
-        isOpen={commentsOpen}
-        onClose={() => setCommentsOpen(false)}
-        isArtist={isArtist}
-      />
-
-      <AddToPlaylistDialog
-        open={addToPlaylistOpen}
-        onOpenChange={setAddToPlaylistOpen}
-        snippetId={snippet.id}
-      />
+      <CommentsSheet snippetId={snippet.id} isOpen={commentsOpen} onClose={() => setCommentsOpen(false)} isArtist={isArtist} />
+      <AddToPlaylistDialog open={addToPlaylistOpen} onOpenChange={setAddToPlaylistOpen} snippetId={snippet.id} />
     </div>
   );
 }
