@@ -94,18 +94,8 @@ async function getOverview(supabase: any, artistId: string, params: any) {
     .gte('metric_date', cutoff.toISOString())
     .order('metric_date', { ascending: true });
 
-  // Calculate totals
-  const totals = dailyMetrics?.reduce((acc: any, day: any) => ({
-    impressions: acc.impressions + day.impressions,
-    plays: acc.plays + day.plays,
-    retention_3s: acc.retention_3s + day.retention_3s,
-    retention_15s: acc.retention_15s + day.retention_15s,
-    completions: acc.completions + day.completions,
-    likes: acc.likes + day.likes,
-    shares: acc.shares + day.shares,
-    saves: acc.saves + day.saves,
-    unique_listeners: acc.unique_listeners + day.unique_listeners,
-  }), {
+  // Calculate totals with default values
+  const defaultTotals = {
     impressions: 0,
     plays: 0,
     retention_3s: 0,
@@ -115,7 +105,21 @@ async function getOverview(supabase: any, artistId: string, params: any) {
     shares: 0,
     saves: 0,
     unique_listeners: 0,
-  });
+  };
+
+  const totals = (dailyMetrics && dailyMetrics.length > 0) 
+    ? dailyMetrics.reduce((acc: any, day: any) => ({
+        impressions: acc.impressions + (day.impressions || 0),
+        plays: acc.plays + (day.plays || 0),
+        retention_3s: acc.retention_3s + (day.retention_3s || 0),
+        retention_15s: acc.retention_15s + (day.retention_15s || 0),
+        completions: acc.completions + (day.completions || 0),
+        likes: acc.likes + (day.likes || 0),
+        shares: acc.shares + (day.shares || 0),
+        saves: acc.saves + (day.saves || 0),
+        unique_listeners: acc.unique_listeners + (day.unique_listeners || 0),
+      }), defaultTotals)
+    : defaultTotals;
 
   // Get top snippets
   const { data: snippets } = await supabase
