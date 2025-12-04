@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -29,58 +29,64 @@ export function MentionTextarea({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [mentionStart, setMentionStart] = useState(-1);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const previousMentionsRef = useRef<string>("");
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Search for users when @ is typed
-  useEffect(() => {
-    const searchMentions = async () => {
-      if (!textareaRef.current) return;
+  // Debounced search for users when @ is typed
+  const searchMentions = useCallback(async () => {
+    if (!textareaRef.current) return;
 
-      const cursorPos = textareaRef.current.selectionStart;
-      const textBeforeCursor = value.slice(0, cursorPos);
-      const atIndex = textBeforeCursor.lastIndexOf("@");
+    const cursorPos = textareaRef.current.selectionStart;
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const atIndex = textBeforeCursor.lastIndexOf("@");
 
-      if (atIndex === -1 || cursorPos - atIndex > 30) {
-        setShowSuggestions(false);
-        return;
-      }
+    if (atIndex === -1 || cursorPos - atIndex > 30) {
+      setShowSuggestions(false);
+      return;
+    }
 
-      const searchTerm = textBeforeCursor.slice(atIndex + 1);
-      
-      // Check if there's a space after @, if so, don't show suggestions
-      if (searchTerm.includes(" ")) {
-        setShowSuggestions(false);
-        return;
-      }
+    const searchTerm = textBeforeCursor.slice(atIndex + 1);
+    
+    if (searchTerm.includes(" ")) {
+      setShowSuggestions(false);
+      return;
+    }
 
-      setMentionStart(atIndex);
+    setMentionStart(atIndex);
 
-      // Search for users
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url")
-        .ilike("username", `${searchTerm}%`)
-        .limit(5);
+    if (searchTerm.length === 0) {
+      setShowSuggestions(false);
+      return;
+    }
 
-      if (data && data.length > 0) {
-        setSuggestions(data);
-        setShowSuggestions(true);
-        setSelectedIndex(0);
-      } else {
-        setShowSuggestions(false);
-      }
-    };
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, username, avatar_url")
+      .ilike("username", `${searchTerm}%`)
+      .limit(5);
 
-    searchMentions();
+    if (data && data.length > 0) {
+      setSuggestions(data);
+      setShowSuggestions(true);
+      setSelectedIndex(0);
+    } else {
+      setShowSuggestions(false);
+    }
   }, [value]);
 
-  // Extract mentioned user IDs from text
+  // Extract mentioned user IDs only when value changes significantly
   useEffect(() => {
     if (!onMentionedUsers) return;
 
     const mentionRegex = /@(\w+)/g;
     const mentions = value.match(mentionRegex);
+    const mentionString = mentions ? mentions.sort().join(",") : "";
     
-    if (!mentions) {
+    // Only update if mentions actually changed
+    if (mentionString === previousMentionsRef.current) return;
+    previousMentionsRef.current = mentionString;
+
+    if (!mentions || mentions.length === 0) {
       onMentionedUsers([]);
       return;
     }
@@ -98,6 +104,18 @@ export function MentionTextarea({
       });
   }, [value, onMentionedUsers]);
 
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value);
+    
+    // Debounce the search
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      searchMentions();
+    }, 150);
+  };
+
   const insertMention = (profile: Profile) => {
     if (!textareaRef.current || mentionStart === -1) return;
 
@@ -108,7 +126,6 @@ export function MentionTextarea({
     onChange(newValue);
     setShowSuggestions(false);
 
-    // Move cursor after the mention
     setTimeout(() => {
       const newPos = mentionStart + profile.username.length + 2;
       textareaRef.current?.setSelectionRange(newPos, newPos);
@@ -138,20 +155,23 @@ export function MentionTextarea({
       <Textarea
         ref={textareaRef}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className={cn("cursor-text relative z-10", className)}
+        className={cn("cursor-text", className)}
         autoComplete="off"
       />
 
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute bottom-full left-0 right-0 mb-2 bg-background border border-border rounded-lg shadow-lg overflow-hidden z-50">
+        <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border border-border rounded-lg shadow-lg overflow-hidden z-[100]">
           {suggestions.map((profile, index) => (
             <button
               key={profile.id}
               type="button"
-              onClick={() => insertMention(profile)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                insertMention(profile);
+              }}
               className={cn(
                 "w-full px-3 py-2 flex items-center gap-2 hover:bg-accent transition-colors text-left",
                 index === selectedIndex && "bg-accent"
