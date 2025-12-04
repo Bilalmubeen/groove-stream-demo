@@ -1,6 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Search, MessageCircle, Bell, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { MessageBadge } from '@/components/Messages/MessageBadge';
+import { NotificationBadge } from '@/components/Notifications/NotificationBadge';
 
 export function BottomNav() {
   const navigate = useNavigate();
@@ -38,7 +40,11 @@ export function BottomNav() {
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
             >
-              <Icon className={cn("h-5 w-5", active && "scale-110")} />
+              <div className="relative">
+                <Icon className={cn("h-5 w-5", active && "scale-110")} />
+                {item.path === '/messages' && <MessageBadge />}
+                {item.path === '/notifications' && <NotificationBadge />}
+              </div>
               <span className="text-[10px] font-medium">{item.label}</span>
             </button>
           );

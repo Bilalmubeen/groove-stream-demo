@@ -2,12 +2,19 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload, Settings, UserPlus, UserMinus, MessageCircle, BarChart3 } from 'lucide-react';
+import { Upload, Settings, UserPlus, UserMinus, MessageCircle, BarChart3, Ban, MoreHorizontal } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { ClickableText } from '@/components/ui/clickable-text';
+import { useBlockedUsers } from '@/hooks/useBlockedUsers';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface ProfileHeaderProps {
   userId: string;
@@ -36,6 +43,7 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
   const [stats, setStats] = useState<StatsData>({ followers: 0, following: 0, likes: 0 });
   const [isFollowing, setIsFollowing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { isBlocked, blockUser, unblockUser } = useBlockedUsers();
 
   useEffect(() => {
     loadProfile();
@@ -342,6 +350,22 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
                   <MessageCircle className={cn(isMobile ? "w-3 h-3" : "w-4 h-4", !isMobile && "mr-2")} />
                   {!isMobile && "Message"}
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size={isMobile ? "sm" : "default"}>
+                      <MoreHorizontal className={isMobile ? "w-3 h-3" : "w-4 h-4"} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => isBlocked(userId) ? unblockUser(userId) : blockUser(userId)}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Ban className="w-4 h-4 mr-2" />
+                      {isBlocked(userId) ? "Unblock User" : "Block User"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             )}
           </div>
