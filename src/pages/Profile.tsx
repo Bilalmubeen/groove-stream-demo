@@ -7,11 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileHeader } from '@/components/Profile/ProfileHeader';
 import { SnippetsGrid } from '@/components/Profile/SnippetsGrid';
 import { PlaylistsGrid } from '@/components/Profile/PlaylistsGrid';
-import { LikedSnippetsGrid } from '@/components/Profile/LikedSnippetsGrid';
-import { FavoritesSnippetsGrid } from '@/components/Profile/FavoritesSnippetsGrid';
-import { UploadDialog } from '@/components/Profile/UploadDialog';
-import { EditProfileDialog } from '@/components/Profile/EditProfileDialog';
-import { CreatePlaylistDialog } from '@/components/Profile/CreatePlaylistDialog';
 
 export default function Profile() {
   const { handle } = useParams();
@@ -20,9 +15,6 @@ export default function Profile() {
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isArtist, setIsArtist] = useState(false);
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('snippets');
 
   useEffect(() => {
@@ -134,24 +126,22 @@ export default function Profile() {
         <ProfileHeader
           userId={profileUserId!}
           isOwnProfile={isOwnProfile}
-          onUploadClick={() => setUploadOpen(true)}
-          onEditClick={() => setEditOpen(true)}
+          onUploadClick={() => navigate('/upload')}
+          onEditClick={() => {}}
           isArtist={isArtist}
         />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
-          <TabsList className="w-full grid grid-cols-4">
+          <TabsList className="w-full grid grid-cols-2">
             <TabsTrigger value="snippets">Snippets</TabsTrigger>
             <TabsTrigger value="playlists">Playlists</TabsTrigger>
-            <TabsTrigger value="liked">Liked</TabsTrigger>
-            <TabsTrigger value="favorites">Favorites</TabsTrigger>
           </TabsList>
 
           <TabsContent value="snippets" className="mt-6">
             <SnippetsGrid
               userId={profileUserId!}
               isOwnProfile={isOwnProfile}
-              onUploadClick={() => setUploadOpen(true)}
+              onUploadClick={() => navigate('/upload')}
             />
           </TabsContent>
 
@@ -159,35 +149,11 @@ export default function Profile() {
             <PlaylistsGrid
               userId={profileUserId!}
               isOwnProfile={isOwnProfile}
-              onCreateClick={() => setCreatePlaylistOpen(true)}
+              onCreateClick={() => {}}
             />
-          </TabsContent>
-
-          <TabsContent value="liked" className="mt-6">
-            <LikedSnippetsGrid userId={profileUserId!} isOwnProfile={isOwnProfile} />
-          </TabsContent>
-
-          <TabsContent value="favorites" className="mt-6">
-            <FavoritesSnippetsGrid userId={profileUserId!} isOwnProfile={isOwnProfile} />
           </TabsContent>
         </Tabs>
       </div>
-
-      {isOwnProfile && (
-        <>
-          <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
-          <EditProfileDialog
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            userId={profileUserId!}
-            onSuccess={() => window.location.reload()}
-          />
-          <CreatePlaylistDialog
-            open={createPlaylistOpen}
-            onOpenChange={setCreatePlaylistOpen}
-          />
-        </>
-      )}
     </div>
   );
 }
