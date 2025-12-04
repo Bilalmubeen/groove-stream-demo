@@ -173,31 +173,30 @@ export function ProfileHeader({ userId, isOwnProfile, onUploadClick, onEditClick
         }
       }
 
-      // Create new conversation
-      const { data: newConversation, error: convError } = await supabase
+      // Create new conversation with client-generated ID to avoid SELECT policy issue
+      const newConversationId = crypto.randomUUID();
+      const { error: convError } = await supabase
         .from('conversations')
-        .insert({})
-        .select()
-        .single();
+        .insert({ id: newConversationId });
 
       if (convError) throw convError;
 
       // Add current user as member first
       const { error: currentUserError } = await supabase
         .from('conversation_members')
-        .insert({ conversation_id: newConversation.id, user_id: user.id });
+        .insert({ conversation_id: newConversationId, user_id: user.id });
 
       if (currentUserError) throw currentUserError;
 
       // Then add other user as member
       const { error: otherUserError } = await supabase
         .from('conversation_members')
-        .insert({ conversation_id: newConversation.id, user_id: userId });
+        .insert({ conversation_id: newConversationId, user_id: userId });
 
       if (otherUserError) throw otherUserError;
 
       // Navigate to messages with new conversation
-      navigate(`/messages?conversation=${newConversation.id}`);
+      navigate(`/messages?conversation=${newConversationId}`);
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast({
