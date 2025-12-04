@@ -361,7 +361,7 @@ export type Database = {
             foreignKeyName: "follows_following_id_fkey"
             columns: ["following_id"]
             isOneToOne: false
-            referencedRelation: "artist_profiles"
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
