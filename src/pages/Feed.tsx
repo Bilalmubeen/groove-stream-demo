@@ -5,7 +5,7 @@ import { SnippetCard } from "@/components/Feed/SnippetCard";
 import { NotificationBadge } from "@/components/Notifications/NotificationBadge";
 import { BottomNav } from "@/components/Navigation/BottomNav";
 import { toast } from "sonner";
-import { User, LogOut, Search } from "lucide-react";
+import { User, LogOut, Search, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/beatseek-logo.png";
 import { useEngagement } from "@/hooks/useEngagement";
@@ -343,6 +343,14 @@ export default function Feed() {
           <h1 className={cn("text-lg md:text-xl font-bold gradient-text", isMobile && "flex-1")}>BeatSeek</h1>
           <div className="flex items-center gap-1 md:gap-2">
             <NotificationBadge />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/messages")}
+              aria-label="Messages"
+            >
+              <MessageCircle className="w-5 h-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
