@@ -133,20 +133,15 @@ export function MentionTextarea({
     }
   };
 
-  const handleClick = () => {
-    textareaRef.current?.focus();
-  };
-
   return (
-    <div className="relative flex-1" onClick={handleClick}>
+    <div className="relative flex-1">
       <Textarea
         ref={textareaRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        onFocus={() => {}}
         placeholder={placeholder}
-        className={cn("cursor-text", className)}
+        className={cn("cursor-text relative z-10", className)}
         autoComplete="off"
       />
 
