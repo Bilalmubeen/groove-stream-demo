@@ -22,10 +22,7 @@ const Messages = lazy(() => import("./pages/Messages"));
 const Explore = lazy(() => import("./pages/Explore"));
 const Playlist = lazy(() => import("./pages/Playlist"));
 const PlaylistInvite = lazy(() => import("./pages/PlaylistInvite"));
-const Profile = lazy(() => import("./pages/Profile").catch(() => {
-  // Retry import on failure (handles cache/network issues)
-  return import("./pages/Profile");
-}));
+const Profile = lazy(() => import("./pages/Profile"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const SnippetAnalytics = lazy(() => import("./pages/SnippetAnalytics"));
