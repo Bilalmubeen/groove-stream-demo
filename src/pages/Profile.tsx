@@ -51,7 +51,6 @@ export default function Profile() {
       setLoading(true);
 
       if (handle) {
-        // Load profile by handle for /u/:handle route
         const { data, error } = await supabase
           .from('profiles')
           .select('id')
@@ -62,7 +61,6 @@ export default function Profile() {
         setProfileUserId(data.id);
         setIsOwnProfile(data.id === currentUserId);
         
-        // Check if artist
         const { data: artistData } = await supabase
           .from('artist_profiles')
           .select('id')
@@ -70,13 +68,19 @@ export default function Profile() {
           .maybeSingle();
         setIsArtist(!!artistData);
       } else {
-        // /profile route - show current user's profile
         if (!currentUserId) {
           setProfileUserId(null);
           setIsOwnProfile(false);
         } else {
           setProfileUserId(currentUserId);
           setIsOwnProfile(true);
+          
+          const { data: artistData } = await supabase
+            .from('artist_profiles')
+            .select('id')
+            .eq('user_id', currentUserId)
+            .maybeSingle();
+          setIsArtist(!!artistData);
         }
       }
     } catch (error) {
@@ -95,15 +99,13 @@ export default function Profile() {
     setRefreshKey(prev => prev + 1);
   };
 
-  // Redirect to login if trying to access /profile without being logged in
   if (!loading && !handle && !currentUserId) {
     return <Navigate to="/login" replace />;
   }
 
-  // Show 404 if profile not found
   if (!loading && !profileUserId) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-2">Profile not found</h1>
           <p className="text-muted-foreground">The user you're looking for doesn't exist.</p>
@@ -114,7 +116,7 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -122,11 +124,10 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header with gradient glow */}
+      {/* Header */}
       <div className="relative">
-        <div className="absolute inset-0 bg-[var(--gradient-glow)] pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none" />
         <div className="relative max-w-5xl mx-auto px-4 pt-8 pb-6">
-          {/* Back Button */}
           <Button
             variant="ghost"
             size="sm"
@@ -147,7 +148,7 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* Tabs Section */}
+      {/* Tabs */}
       <div className="max-w-5xl mx-auto px-4 py-6">
         <Tabs defaultValue="snippets" className="w-full">
           <TabsList className="w-full justify-start border-b border-border rounded-none bg-transparent h-auto p-0">
@@ -220,12 +221,14 @@ export default function Profile() {
         onSuccess={handleUploadSuccess}
       />
 
-      <EditProfileDialog
-        open={showEditDialog}
-        onOpenChange={setShowEditDialog}
-        userId={currentUserId!}
-        onSuccess={handleEditSuccess}
-      />
+      {currentUserId && (
+        <EditProfileDialog
+          open={showEditDialog}
+          onOpenChange={setShowEditDialog}
+          userId={currentUserId}
+          onSuccess={handleEditSuccess}
+        />
+      )}
 
       <CreatePlaylistDialog
         open={showCreatePlaylistDialog}
