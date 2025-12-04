@@ -926,7 +926,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           artist_id: string
-          audio_url: string
+          audio_url: string | null
           cover_image_url: string | null
           created_at: string
           cta_type: Database["public"]["Enums"]["cta_type"] | null
@@ -939,6 +939,7 @@ export type Database = {
           hook_start_ms: number | null
           id: string
           likes: number
+          media_type: Database["public"]["Enums"]["media_type"]
           original_audio_url: string | null
           rejection_reason: string | null
           scheduled_at: string | null
@@ -949,11 +950,13 @@ export type Database = {
           title: string
           updated_at: string
           views: number
+          youtube_start_seconds: number | null
+          youtube_video_id: string | null
         }
         Insert: {
           approved_at?: string | null
           artist_id: string
-          audio_url: string
+          audio_url?: string | null
           cover_image_url?: string | null
           created_at?: string
           cta_type?: Database["public"]["Enums"]["cta_type"] | null
@@ -966,6 +969,7 @@ export type Database = {
           hook_start_ms?: number | null
           id?: string
           likes?: number
+          media_type?: Database["public"]["Enums"]["media_type"]
           original_audio_url?: string | null
           rejection_reason?: string | null
           scheduled_at?: string | null
@@ -976,11 +980,13 @@ export type Database = {
           title: string
           updated_at?: string
           views?: number
+          youtube_start_seconds?: number | null
+          youtube_video_id?: string | null
         }
         Update: {
           approved_at?: string | null
           artist_id?: string
-          audio_url?: string
+          audio_url?: string | null
           cover_image_url?: string | null
           created_at?: string
           cta_type?: Database["public"]["Enums"]["cta_type"] | null
@@ -993,6 +999,7 @@ export type Database = {
           hook_start_ms?: number | null
           id?: string
           likes?: number
+          media_type?: Database["public"]["Enums"]["media_type"]
           original_audio_url?: string | null
           rejection_reason?: string | null
           scheduled_at?: string | null
@@ -1003,6 +1010,8 @@ export type Database = {
           title?: string
           updated_at?: string
           views?: number
+          youtube_start_seconds?: number | null
+          youtube_video_id?: string | null
         }
         Relationships: [
           {
@@ -1345,6 +1354,7 @@ export type Database = {
       app_role: "listener" | "artist" | "admin"
       cta_type: "full_track" | "presave" | "merch" | "custom"
       feed_rail: "for_you" | "new_this_week" | "following" | "underground"
+      media_type: "audio" | "youtube"
       music_genre:
         | "hip-hop"
         | "trap"
@@ -1491,6 +1501,7 @@ export const Constants = {
       app_role: ["listener", "artist", "admin"],
       cta_type: ["full_track", "presave", "merch", "custom"],
       feed_rail: ["for_you", "new_this_week", "following", "underground"],
+      media_type: ["audio", "youtube"],
       music_genre: [
         "hip-hop",
         "trap",

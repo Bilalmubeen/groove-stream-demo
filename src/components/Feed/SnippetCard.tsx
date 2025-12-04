@@ -6,14 +6,9 @@ import { useEngagement } from "@/hooks/useEngagement";
 import { useAudio } from "@/contexts/AudioContext";
 import { CommentsSheet } from "@/components/Comments/CommentsSheet";
 import { AddToPlaylistDialog } from "@/components/Playlist/AddToPlaylistDialog";
+import { YouTubePlayer } from "@/components/YouTube/YouTubePlayer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeable } from "react-swipeable";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface SnippetCardProps {
   snippet: {
@@ -21,11 +16,14 @@ interface SnippetCardProps {
     title: string;
     artist_name: string;
     cover_image_url?: string;
-    audio_url: string;
+    audio_url?: string;
     likes: number;
     genre: string;
     cta_type?: string;
     cta_url?: string;
+    media_type?: 'audio' | 'youtube';
+    youtube_video_id?: string;
+    youtube_start_seconds?: number;
   };
   isActive: boolean;
   onLike: () => void;
@@ -55,7 +53,8 @@ export function SnippetCard({
   const { play, pause, isPlaying: isAudioPlaying, currentlyPlaying } = useAudio();
   const isMobile = useIsMobile();
   
-  const isPlaying = isAudioPlaying(snippet.id);
+  const isYouTube = snippet.media_type === 'youtube';
+  const isPlaying = !isYouTube && isAudioPlaying(snippet.id);
 
   // Swipe handlers for mobile navigation
   const swipeHandlers = useSwipeable({
@@ -73,14 +72,14 @@ export function SnippetCard({
     trackTouch: true,
   });
 
-  // Auto-play when card becomes active and visible
+  // Auto-play when card becomes active and visible (audio only)
   useEffect(() => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || isYouTube) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        if (entry.isIntersecting && isActive) {
+        if (entry.isIntersecting && isActive && snippet.audio_url) {
           play(snippet.id, snippet.audio_url);
           trackEvent(snippet.id, 'play_start');
         } else if (currentlyPlaying === snippet.id) {
@@ -92,15 +91,17 @@ export function SnippetCard({
 
     observer.observe(cardRef.current);
     return () => observer.disconnect();
-  }, [isActive, snippet.id, snippet.audio_url, currentlyPlaying]);
+  }, [isActive, snippet.id, snippet.audio_url, currentlyPlaying, isYouTube]);
 
   const togglePlayPause = useCallback(() => {
+    if (isYouTube || !snippet.audio_url) return;
+    
     if (isPlaying) {
       pause();
     } else {
       play(snippet.id, snippet.audio_url);
     }
-  }, [isPlaying, snippet.id, snippet.audio_url]);
+  }, [isPlaying, snippet.id, snippet.audio_url, isYouTube]);
 
   const handleCTAClick = useCallback(() => {
     if (snippet.cta_url) {
@@ -108,6 +109,10 @@ export function SnippetCard({
       window.open(snippet.cta_url, '_blank', 'noopener,noreferrer');
     }
   }, [snippet.id, snippet.cta_url]);
+
+  const handleYouTubeComplete = useCallback(() => {
+    trackEvent(snippet.id, 'complete');
+  }, [snippet.id, trackEvent]);
 
   const ctaLabel = {
     'full_track': 'Listen to Full Track',
@@ -139,41 +144,55 @@ export function SnippetCard({
 
       {/* Content */}
       <div className="relative z-10 w-full max-w-2xl mx-auto px-4 md:px-6 flex flex-col items-center">
-        {/* Album Art */}
-        <div className="relative mb-6 md:mb-8">
-          <div className={cn(
-            "rounded-3xl overflow-hidden shadow-2xl animate-pulse-glow",
-            isMobile ? "w-64 h-64" : "w-80 h-80"
-          )}>
-            {snippet.cover_image_url ? (
-              <img 
-                src={snippet.cover_image_url} 
-                alt={snippet.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                <Music className="w-32 h-32 text-primary-foreground opacity-50" />
-              </div>
+        {/* YouTube Player or Album Art */}
+        {isYouTube && snippet.youtube_video_id ? (
+          <div className={cn("mb-6 md:mb-8 w-full", isMobile ? "max-w-[320px]" : "max-w-[400px]")}>
+            <YouTubePlayer
+              videoId={snippet.youtube_video_id}
+              startSeconds={snippet.youtube_start_seconds || 0}
+              maxDuration={30}
+              autoPlay={isActive}
+              onComplete={handleYouTubeComplete}
+            />
+          </div>
+        ) : (
+          <div className="relative mb-6 md:mb-8">
+            <div className={cn(
+              "rounded-3xl overflow-hidden shadow-2xl animate-pulse-glow",
+              isMobile ? "w-64 h-64" : "w-80 h-80"
+            )}>
+              {snippet.cover_image_url ? (
+                <img 
+                  src={snippet.cover_image_url} 
+                  alt={snippet.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                  <Music className="w-32 h-32 text-primary-foreground opacity-50" />
+                </div>
+              )}
+            </div>
+
+            {/* Play/Pause button overlay - only for audio */}
+            {!isYouTube && (
+              <Button
+                onClick={togglePlayPause}
+                size={isMobile ? "default" : "lg"}
+                className={cn(
+                  "absolute rounded-full bg-primary/90 hover:bg-primary shadow-xl",
+                  isMobile ? "bottom-3 right-3 w-12 h-12" : "bottom-4 right-4 w-16 h-16"
+                )}
+              >
+                {isPlaying ? (
+                  <Pause className={isMobile ? "w-5 h-5" : "w-8 h-8"} />
+                ) : (
+                  <Play className={cn(isMobile ? "w-5 h-5 ml-0.5" : "w-8 h-8 ml-1")} />
+                )}
+              </Button>
             )}
           </div>
-
-          {/* Play/Pause button overlay */}
-          <Button
-            onClick={togglePlayPause}
-            size={isMobile ? "default" : "lg"}
-            className={cn(
-              "absolute rounded-full bg-primary/90 hover:bg-primary shadow-xl",
-              isMobile ? "bottom-3 right-3 w-12 h-12" : "bottom-4 right-4 w-16 h-16"
-            )}
-          >
-            {isPlaying ? (
-              <Pause className={isMobile ? "w-5 h-5" : "w-8 h-8"} />
-            ) : (
-              <Play className={cn(isMobile ? "w-5 h-5 ml-0.5" : "w-8 h-8 ml-1")} />
-            )}
-          </Button>
-        </div>
+        )}
 
         {/* Track Info */}
         <div className="text-center mb-6 md:mb-8 space-y-2">
