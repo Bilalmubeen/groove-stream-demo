@@ -3,7 +3,12 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProfileHeader } from '@/components/Profile/ProfileHeader';
+import { SnippetsGrid } from '@/components/Profile/SnippetsGrid';
+import { PlaylistsGrid } from '@/components/Profile/PlaylistsGrid';
+import { LikedSnippetsGrid } from '@/components/Profile/LikedSnippetsGrid';
+import { FavoritesSnippetsGrid } from '@/components/Profile/FavoritesSnippetsGrid';
 
 export default function Profile() {
   const { handle } = useParams();
@@ -12,6 +17,7 @@ export default function Profile() {
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isArtist, setIsArtist] = useState(false);
+  const [activeTab, setActiveTab] = useState('snippets');
 
   useEffect(() => {
     const loadUser = async () => {
@@ -97,8 +103,8 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 pb-24">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
         <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
@@ -111,6 +117,39 @@ export default function Profile() {
           onEditClick={() => {}}
           isArtist={isArtist}
         />
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="snippets">Snippets</TabsTrigger>
+            <TabsTrigger value="playlists">Playlists</TabsTrigger>
+            <TabsTrigger value="liked">Liked</TabsTrigger>
+            <TabsTrigger value="favorites">Favorites</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="snippets" className="mt-6">
+            <SnippetsGrid
+              userId={profileUserId}
+              isOwnProfile={isOwnProfile}
+              onUploadClick={() => navigate('/upload')}
+            />
+          </TabsContent>
+
+          <TabsContent value="playlists" className="mt-6">
+            <PlaylistsGrid
+              userId={profileUserId}
+              isOwnProfile={isOwnProfile}
+              onCreateClick={() => {}}
+            />
+          </TabsContent>
+
+          <TabsContent value="liked" className="mt-6">
+            <LikedSnippetsGrid userId={profileUserId} isOwnProfile={isOwnProfile} />
+          </TabsContent>
+
+          <TabsContent value="favorites" className="mt-6">
+            <FavoritesSnippetsGrid userId={profileUserId} isOwnProfile={isOwnProfile} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
