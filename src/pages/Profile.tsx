@@ -3,6 +3,7 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ProfileHeader } from '@/components/Profile/ProfileHeader';
 
 export default function Profile() {
   const { handle } = useParams();
@@ -10,6 +11,7 @@ export default function Profile() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isArtist, setIsArtist] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -38,9 +40,15 @@ export default function Profile() {
             .select('id')
             .eq('username', handle)
             .maybeSingle();
-          setProfileUserId(data?.id || null);
+          if (data) {
+            setProfileUserId(data.id);
+            checkArtist(data.id);
+          } else {
+            setProfileUserId(null);
+          }
         } else if (currentUserId) {
           setProfileUserId(currentUserId);
+          checkArtist(currentUserId);
         }
       } catch (error) {
         console.error('Error:', error);
@@ -53,6 +61,17 @@ export default function Profile() {
       loadProfile();
     }
   }, [currentUserId, handle]);
+
+  const checkArtist = async (userId: string) => {
+    const { data } = await supabase
+      .from('artist_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    setIsArtist(!!data);
+  };
+
+  const isOwnProfile = currentUserId === profileUserId;
 
   if (!loading && !handle && !currentUserId) {
     return <Navigate to="/login" replace />;
@@ -78,13 +97,21 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="mb-4">
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back
-      </Button>
-      <h1 className="text-2xl font-bold">Profile</h1>
-      <p className="text-muted-foreground mt-2">User ID: {profileUserId}</p>
+    <div className="min-h-screen bg-background p-4 pb-24">
+      <div className="max-w-4xl mx-auto">
+        <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="mb-4">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+        
+        <ProfileHeader
+          userId={profileUserId}
+          isOwnProfile={isOwnProfile}
+          onUploadClick={() => navigate('/upload')}
+          onEditClick={() => {}}
+          isArtist={isArtist}
+        />
+      </div>
     </div>
   );
 }
