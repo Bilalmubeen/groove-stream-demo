@@ -121,20 +121,24 @@ export default function FollowersList() {
   const handleFollow = async (userId: string, currentlyFollowing: boolean) => {
     try {
       if (currentlyFollowing) {
-        await supabase
+        const { error } = await supabase
           .from("follows")
           .delete()
           .eq("follower_id", currentUserId)
           .eq("following_id", userId);
         
+        if (error) throw error;
+        
         toast.success("Unfollowed");
       } else {
-        await supabase
+        const { error } = await supabase
           .from("follows")
           .insert({
             follower_id: currentUserId,
             following_id: userId
           });
+
+        if (error) throw error;
 
         // Create notification
         await supabase
