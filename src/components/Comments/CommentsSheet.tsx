@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -8,7 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageCircle, Pin, Send } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { useEngagement } from "@/hooks/useEngagement";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MentionTextarea } from "./MentionTextarea";
 import { ClickableText } from "@/components/ui/clickable-text";
@@ -39,7 +38,6 @@ interface CommentsSheetProps {
 export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: CommentsSheetProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { trackEvent } = useEngagement();
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
@@ -50,7 +48,8 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
   useEffect(() => {
     if (isOpen) {
       fetchComments();
-      subscribeToComments();
+      const unsubscribe = subscribeToComments();
+      return unsubscribe;
     }
   }, [isOpen, snippetId]);
 
@@ -75,7 +74,6 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
 
       if (error) throw error;
 
-      // Fetch reactions for each comment
       const commentsWithReactions = await Promise.all(
         (data || []).map(async (comment) => {
           const { data: reactions } = await supabase
@@ -154,7 +152,6 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
 
       if (error) throw error;
 
-      // Store mentions (don't block comment posting if this fails)
       if (mentionedUserIds.length > 0 && commentData) {
         try {
           await supabase
@@ -220,8 +217,16 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
     }
   };
 
-  const CommentItem = ({ comment, isReply = false }: { comment: Comment; isReply?: boolean }) => (
-    <div className={`${isReply ? 'ml-12 mt-2' : ''} space-y-2`}>
+  const handleCommentChange = useCallback((value: string) => {
+    setNewComment(value);
+  }, []);
+
+  const handleMentionedUsers = useCallback((userIds: string[]) => {
+    setMentionedUserIds(userIds);
+  }, []);
+
+  const renderComment = (comment: Comment, isReply = false) => (
+    <div key={comment.id} className={`${isReply ? 'ml-12 mt-2' : ''} space-y-2`}>
       <div className="flex gap-3">
         <button onClick={() => navigate(`/u/${comment.profiles.username}`)}>
           <Avatar className="w-8 h-8">
@@ -284,13 +289,11 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
         </div>
       </div>
 
-      {comment.replies?.map((reply) => (
-        <CommentItem key={reply.id} comment={reply} isReply />
-      ))}
+      {comment.replies?.map((reply) => renderComment(reply, true))}
     </div>
   );
 
-  const CommentsContent = () => (
+  const commentsContent = (
     <>
       <div className="flex-1 overflow-y-auto space-y-4 my-4">
         {comments.length === 0 ? (
@@ -299,7 +302,7 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
             <p>No comments yet. Be the first!</p>
           </div>
         ) : (
-          comments.map((comment) => <CommentItem key={comment.id} comment={comment} />)
+          comments.map((comment) => renderComment(comment))
         )}
       </div>
 
@@ -315,8 +318,8 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
         <div className="flex gap-2">
           <MentionTextarea
             value={newComment}
-            onChange={setNewComment}
-            onMentionedUsers={setMentionedUserIds}
+            onChange={handleCommentChange}
+            onMentionedUsers={handleMentionedUsers}
             placeholder="Add a comment... Use @ to mention users"
             className="resize-none min-h-[60px]"
           />
@@ -343,7 +346,7 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
               Comments {comments.length > 0 && `(${comments.length})`}
             </SheetTitle>
           </SheetHeader>
-          <CommentsContent />
+          {commentsContent}
         </SheetContent>
       </Sheet>
     );
@@ -358,7 +361,7 @@ export function CommentsSheet({ snippetId, isOpen, onClose, isArtist }: Comments
             Comments {comments.length > 0 && `(${comments.length})`}
           </DialogTitle>
         </DialogHeader>
-        <CommentsContent />
+        {commentsContent}
       </DialogContent>
     </Dialog>
   );
