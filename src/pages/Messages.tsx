@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, Check, CheckCheck, Ban } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { useBlockedUsers } from "@/hooks/useBlockedUsers";
 
 interface Conversation {
   id: string;
@@ -43,6 +44,16 @@ export default function Messages() {
   const [newMessage, setNewMessage] = useState("");
   const [currentUserId, setCurrentUserId] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const { blockedUserIds, isBlocked } = useBlockedUsers();
+
+  // Filter out conversations with blocked users
+  const filteredConversations = useMemo(() => {
+    return conversations.filter(conv => !isBlocked(conv.other_user.id));
+  }, [conversations, blockedUserIds]);
+
+  // Check if current conversation is with a blocked user
+  const selectedConversationData = conversations.find(c => c.id === selectedConversation);
+  const isConversationBlocked = selectedConversationData ? isBlocked(selectedConversationData.other_user.id) : false;
 
   useEffect(() => {
     initializeChat();
@@ -260,12 +271,12 @@ export default function Messages() {
         </header>
 
         <div className="overflow-y-auto h-[calc(100vh-73px)]">
-          {conversations.length === 0 ? (
+          {filteredConversations.length === 0 ? (
             <div className="text-center py-12 px-4">
               <p className="text-muted-foreground">No conversations yet</p>
             </div>
           ) : (
-            conversations.map((conv) => (
+            filteredConversations.map((conv) => (
               <button
                 key={conv.id}
                 onClick={() => setSelectedConversation(conv.id)}
@@ -357,18 +368,25 @@ export default function Messages() {
           </div>
 
           <div className="p-4 border-t border-border/50">
-            <div className="flex gap-2">
-              <Input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                placeholder="Type a message..."
-                className="flex-1"
-              />
-              <Button onClick={sendMessage} disabled={!newMessage.trim()} size="icon">
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
+            {isConversationBlocked ? (
+              <div className="flex items-center justify-center gap-2 text-muted-foreground py-2">
+                <Ban className="w-4 h-4" />
+                <span className="text-sm">You have blocked this user</span>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  placeholder="Type a message..."
+                  className="flex-1"
+                />
+                <Button onClick={sendMessage} disabled={!newMessage.trim()} size="icon">
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       ) : (
