@@ -3,6 +3,15 @@ import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ProfileHeader } from '@/components/Profile/ProfileHeader';
+import { SnippetsGrid } from '@/components/Profile/SnippetsGrid';
+import { PlaylistsGrid } from '@/components/Profile/PlaylistsGrid';
+import { LikedSnippetsGrid } from '@/components/Profile/LikedSnippetsGrid';
+import { FavoritesSnippetsGrid } from '@/components/Profile/FavoritesSnippetsGrid';
+import { UploadDialog } from '@/components/Profile/UploadDialog';
+import { EditProfileDialog } from '@/components/Profile/EditProfileDialog';
+import { CreatePlaylistDialog } from '@/components/Profile/CreatePlaylistDialog';
 
 export default function Profile() {
   const { handle } = useParams();
@@ -10,6 +19,11 @@ export default function Profile() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isArtist, setIsArtist] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [createPlaylistOpen, setCreatePlaylistOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('snippets');
 
   useEffect(() => {
     loadCurrentUser();
@@ -40,15 +54,21 @@ export default function Profile() {
           .from('profiles')
           .select('id')
           .eq('username', handle)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
-        setProfileUserId(data.id);
+        if (data) {
+          setProfileUserId(data.id);
+          checkArtistStatus(data.id);
+        } else {
+          setProfileUserId(null);
+        }
       } else {
         if (!currentUserId) {
           setProfileUserId(null);
         } else {
           setProfileUserId(currentUserId);
+          checkArtistStatus(currentUserId);
         }
       }
     } catch (error) {
@@ -58,6 +78,22 @@ export default function Profile() {
       setLoading(false);
     }
   };
+
+  const checkArtistStatus = async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from('artist_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      setIsArtist(!!data);
+    } catch (error) {
+      console.error('Error checking artist status:', error);
+    }
+  };
+
+  const isOwnProfile = currentUserId === profileUserId;
 
   if (!loading && !handle && !currentUserId) {
     return <Navigate to="/login" replace />;
@@ -83,18 +119,75 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => navigate('/')}
-        className="mb-4"
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back
-      </Button>
-      <h1 className="text-2xl font-bold">Profile Page</h1>
-      <p className="text-muted-foreground">User ID: {profileUserId}</p>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/')}
+          className="mb-4"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+
+        <ProfileHeader
+          userId={profileUserId!}
+          isOwnProfile={isOwnProfile}
+          onUploadClick={() => setUploadOpen(true)}
+          onEditClick={() => setEditOpen(true)}
+          isArtist={isArtist}
+        />
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="snippets">Snippets</TabsTrigger>
+            <TabsTrigger value="playlists">Playlists</TabsTrigger>
+            <TabsTrigger value="liked">Liked</TabsTrigger>
+            <TabsTrigger value="favorites">Favorites</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="snippets" className="mt-6">
+            <SnippetsGrid
+              userId={profileUserId!}
+              isOwnProfile={isOwnProfile}
+              onUploadClick={() => setUploadOpen(true)}
+            />
+          </TabsContent>
+
+          <TabsContent value="playlists" className="mt-6">
+            <PlaylistsGrid
+              userId={profileUserId!}
+              isOwnProfile={isOwnProfile}
+              onCreateClick={() => setCreatePlaylistOpen(true)}
+            />
+          </TabsContent>
+
+          <TabsContent value="liked" className="mt-6">
+            <LikedSnippetsGrid userId={profileUserId!} isOwnProfile={isOwnProfile} />
+          </TabsContent>
+
+          <TabsContent value="favorites" className="mt-6">
+            <FavoritesSnippetsGrid userId={profileUserId!} isOwnProfile={isOwnProfile} />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {isOwnProfile && (
+        <>
+          <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+          <EditProfileDialog
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            userId={profileUserId!}
+            onSuccess={() => window.location.reload()}
+          />
+          <CreatePlaylistDialog
+            open={createPlaylistOpen}
+            onOpenChange={setCreatePlaylistOpen}
+          />
+        </>
+      )}
     </div>
   );
 }
