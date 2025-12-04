@@ -252,8 +252,7 @@ export default function Messages() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate(-1)}
-            className="md:hidden"
+            onClick={() => navigate("/")}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
