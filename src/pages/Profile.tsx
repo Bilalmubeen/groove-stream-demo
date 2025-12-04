@@ -9,6 +9,7 @@ import { SnippetsGrid } from '@/components/Profile/SnippetsGrid';
 import { PlaylistsGrid } from '@/components/Profile/PlaylistsGrid';
 import { LikedSnippetsGrid } from '@/components/Profile/LikedSnippetsGrid';
 import { FavoritesSnippetsGrid } from '@/components/Profile/FavoritesSnippetsGrid';
+import { EditProfileDialog } from '@/components/Profile/EditProfileDialog';
 
 export default function Profile() {
   const { handle } = useParams();
@@ -18,6 +19,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [isArtist, setIsArtist] = useState(false);
   const [activeTab, setActiveTab] = useState('snippets');
+  const [editProfileOpen, setEditProfileOpen] = useState(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -114,8 +116,15 @@ export default function Profile() {
           userId={profileUserId}
           isOwnProfile={isOwnProfile}
           onUploadClick={() => navigate('/upload')}
-          onEditClick={() => {}}
+          onEditClick={() => setEditProfileOpen(true)}
           isArtist={isArtist}
+        />
+
+        <EditProfileDialog
+          open={editProfileOpen}
+          onOpenChange={setEditProfileOpen}
+          userId={profileUserId}
+          onSuccess={() => window.location.reload()}
         />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
