@@ -241,15 +241,12 @@ export function YouTubePlayer({
         className="absolute inset-0 pointer-events-none"
       />
 
-      {/* Overlay to hide YouTube branding */}
-      <div className="absolute inset-0 pointer-events-none z-[5]" />
-
       {/* Overlay for controls */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
-      {/* Center overlay to hide YouTube play button */}
+      {/* Center overlay to hide YouTube play button - larger to cover YouTube branding */}
       {!isPlaying && isReady && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-black/60 rounded-full z-[8] pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-black/80 rounded-full z-[8] pointer-events-none" />
       )}
 
       {/* Play/Pause button overlay */}
