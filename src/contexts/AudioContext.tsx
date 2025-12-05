@@ -65,39 +65,50 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   }, [requestAudioPermission]);
 
   const play = useCallback(async (snippetId: string, audioUrl: string) => {
-    if (!audioRef.current) return;
+    console.log('[AudioContext] play() called', { snippetId, audioUrl, hasAudioRef: !!audioRef.current });
+    
+    if (!audioRef.current) {
+      console.error('[AudioContext] No audio ref available');
+      return;
+    }
 
     // Validate audioUrl - prevent playing null/empty URLs
     if (!audioUrl || audioUrl.trim() === '') {
-      console.warn('Cannot play audio: No valid audio URL provided for snippet', snippetId);
+      console.warn('[AudioContext] Cannot play audio: No valid audio URL provided for snippet', snippetId);
       return;
     }
 
     // Request permission if not yet granted
     if (!hasAudioPermission) {
+      console.log('[AudioContext] Requesting audio permission...');
       await requestAudioPermission();
     }
 
     try {
       if (currentlyPlaying === snippetId) {
         // Resume current track
+        console.log('[AudioContext] Resuming current track', snippetId);
         await audioRef.current.play();
       } else {
         // Stop current and play new
+        console.log('[AudioContext] Playing new track', { snippetId, audioUrl });
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
         audioRef.current.src = audioUrl;
+        console.log('[AudioContext] Audio src set, calling play()...');
         await audioRef.current.play();
+        console.log('[AudioContext] play() succeeded, setting currentlyPlaying');
         setCurrentlyPlaying(snippetId);
       }
     } catch (error) {
-      console.error('Error playing audio:', error);
+      console.error('[AudioContext] Error playing audio:', error);
       // Reset state on error
       setCurrentlyPlaying(null);
     }
   }, [currentlyPlaying, hasAudioPermission, requestAudioPermission]);
 
   const pause = useCallback(() => {
+    console.log('[AudioContext] pause() called');
     if (audioRef.current) {
       audioRef.current.pause();
     }
