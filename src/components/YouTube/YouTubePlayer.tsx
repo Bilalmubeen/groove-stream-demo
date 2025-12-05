@@ -63,15 +63,20 @@ export function YouTubePlayer({
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<number | null>(null);
   const autoPlayRef = useRef(autoPlay);
+  const isPlayingRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
 
-  // Keep autoPlayRef in sync
+  // Keep refs in sync
   useEffect(() => {
     autoPlayRef.current = autoPlay;
   }, [autoPlay]);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   const endSeconds = startSeconds + maxDuration;
   const progress = (currentTime / maxDuration) * 100;
@@ -188,9 +193,9 @@ export function YouTubePlayer({
     if (!isReady || !playerRef.current) return;
     
     try {
-      if (autoPlay && !isPlaying) {
+      if (autoPlay && !isPlayingRef.current) {
         playerRef.current.playVideo();
-      } else if (!autoPlay && isPlaying) {
+      } else if (!autoPlay && isPlayingRef.current) {
         playerRef.current.pauseVideo();
       }
     } catch (e) {
