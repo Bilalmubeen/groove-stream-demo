@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Play, Heart, Eye, Upload, Music, Youtube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAudio } from '@/contexts/AudioContext';
-import { YouTubePlayer } from '@/components/YouTube/YouTubePlayer';
+import { LiteYouTubeEmbed } from '@/components/YouTube/LiteYouTubeEmbed';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface Snippet {
@@ -208,11 +208,9 @@ export function SnippetsGrid({ userId, isOwnProfile, onUploadClick }: SnippetsGr
           {youtubeModal && youtubeModal.youtube_video_id && (
             <div className="p-4 space-y-4">
               <h3 className="text-lg font-semibold">{youtubeModal.title}</h3>
-              <YouTubePlayer
+              <LiteYouTubeEmbed
                 videoId={youtubeModal.youtube_video_id}
                 startSeconds={youtubeModal.youtube_start_seconds || 0}
-                maxDuration={30}
-                autoPlay={true}
               />
             </div>
           )}

@@ -8,7 +8,7 @@ import { CommentsSheet } from "@/components/Comments/CommentsSheet";
 import { AddToPlaylistDialog } from "@/components/Playlist/AddToPlaylistDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeable } from "react-swipeable";
-import { YouTubePlayer } from "@/components/YouTube/YouTubePlayer";
+import { LiteYouTubeEmbed } from "@/components/YouTube/LiteYouTubeEmbed";
 
 interface SnippetCardProps {
   snippet: {
@@ -195,11 +195,9 @@ export function SnippetCard({
         <div className="relative mb-6 md:mb-8">
           {isYouTube && snippet.youtube_video_id ? (
             <div className={cn("rounded-3xl overflow-hidden shadow-2xl", isMobile ? "w-80" : "w-[480px]")}>
-              <YouTubePlayer
+              <LiteYouTubeEmbed
                 videoId={snippet.youtube_video_id}
                 startSeconds={snippet.youtube_start_seconds || 0}
-                maxDuration={30}
-                autoPlay={isActive}
               />
             </div>
           ) : (
