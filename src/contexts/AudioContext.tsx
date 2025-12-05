@@ -30,21 +30,47 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         await audioRef.current.play();
         audioRef.current.pause();
         audioRef.current.volume = 1;
-        audioRef.current.src = '';
+        // Don't clear src - just leave it, will be overwritten on next play
         
         setHasAudioPermission(true);
         unlockAttempted.current = true;
-        console.log('Audio unlocked successfully');
+        console.log('[AudioContext] Audio unlocked successfully');
         return true;
       }
     } catch (error) {
-      console.log('Audio unlock not needed or failed:', error);
+      console.log('[AudioContext] Audio unlock not needed or failed:', error);
     }
     
     setHasAudioPermission(true);
     unlockAttempted.current = true;
     return true;
   }, [hasAudioPermission]);
+
+  // Add audio event listeners for debugging
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleEnded = () => console.log('[AudioContext] Audio ended');
+    const handlePause = () => console.log('[AudioContext] Audio paused');
+    const handleError = (e: Event) => console.error('[AudioContext] Audio error:', e);
+    const handleCanPlay = () => console.log('[AudioContext] Audio can play');
+    const handleLoadStart = () => console.log('[AudioContext] Audio load start');
+
+    audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('error', handleError);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('loadstart', handleLoadStart);
+
+    return () => {
+      audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('loadstart', handleLoadStart);
+    };
+  }, []);
 
   // Auto-unlock on first user interaction
   useEffect(() => {
