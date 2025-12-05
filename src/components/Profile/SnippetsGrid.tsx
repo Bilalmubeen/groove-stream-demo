@@ -1,19 +1,24 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
-import { Play, Heart, Eye, Upload, Music } from 'lucide-react';
+import { Play, Heart, Eye, Upload, Music, Youtube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAudio } from '@/contexts/AudioContext';
+import { YouTubePlayer } from '@/components/YouTube/YouTubePlayer';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface Snippet {
   id: string;
   title: string;
   cover_image_url: string | null;
-  audio_url: string;
+  audio_url: string | null;
   duration: number;
   likes: number;
   views: number;
   status: string;
+  media_type: 'audio' | 'youtube';
+  youtube_video_id: string | null;
+  youtube_start_seconds: number | null;
 }
 
 interface SnippetsGridProps {
@@ -25,6 +30,7 @@ interface SnippetsGridProps {
 export function SnippetsGrid({ userId, isOwnProfile, onUploadClick }: SnippetsGridProps) {
   const [snippets, setSnippets] = useState<Snippet[]>([]);
   const [loading, setLoading] = useState(true);
+  const [youtubeModal, setYoutubeModal] = useState<Snippet | null>(null);
   const { play, pause, isPlaying } = useAudio();
 
   useEffect(() => {
@@ -49,7 +55,7 @@ export function SnippetsGrid({ userId, isOwnProfile, onUploadClick }: SnippetsGr
 
       const { data, error } = await supabase
         .from('snippets')
-        .select('id, title, cover_image_url, audio_url, duration, likes, views, status')
+        .select('id, title, cover_image_url, audio_url, duration, likes, views, status, media_type, youtube_video_id, youtube_start_seconds')
         .eq('artist_id', artistProfile.id)
         .order('created_at', { ascending: false });
 
@@ -63,6 +69,18 @@ export function SnippetsGrid({ userId, isOwnProfile, onUploadClick }: SnippetsGr
   };
 
   const handlePlayPause = (snippet: Snippet) => {
+    // Handle YouTube snippets - open modal
+    if (snippet.media_type === 'youtube' && snippet.youtube_video_id) {
+      setYoutubeModal(snippet);
+      return;
+    }
+    
+    // Handle audio snippets
+    if (!snippet.audio_url) {
+      console.warn('No audio URL available for snippet:', snippet.id);
+      return;
+    }
+    
     if (isPlaying(snippet.id)) {
       pause();
     } else {
@@ -105,72 +123,101 @@ export function SnippetsGrid({ userId, isOwnProfile, onUploadClick }: SnippetsGr
   }
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-      {snippets.map((snippet) => (
-        <Card
-          key={snippet.id}
-          className="group relative aspect-square overflow-hidden cursor-pointer hover:scale-105 transition-smooth border-2 border-transparent hover:border-primary/50"
-          onClick={() => handlePlayPause(snippet)}
-        >
-          {/* Cover Image */}
-          <div className="absolute inset-0">
-            {snippet.cover_image_url ? (
-              <img
-                src={snippet.cover_image_url}
-                alt={snippet.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                <Music className="w-12 h-12 text-muted-foreground" />
-              </div>
-            )}
-          </div>
-
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-smooth" />
-
-          {/* Play Button Overlay */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth">
-            <div className="w-14 h-14 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center">
-              {isPlaying(snippet.id) ? (
-                <div className="w-4 h-4 border-2 border-primary-foreground" />
+    <>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+        {snippets.map((snippet) => (
+          <Card
+            key={snippet.id}
+            className="group relative aspect-square overflow-hidden cursor-pointer hover:scale-105 transition-smooth border-2 border-transparent hover:border-primary/50"
+            onClick={() => handlePlayPause(snippet)}
+          >
+            {/* Cover Image */}
+            <div className="absolute inset-0">
+              {snippet.cover_image_url ? (
+                <img
+                  src={snippet.cover_image_url}
+                  alt={snippet.title}
+                  className="w-full h-full object-cover"
+                />
               ) : (
-                <Play className="w-6 h-6 text-primary-foreground ml-1" fill="currentColor" />
+                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                  <Music className="w-12 h-12 text-muted-foreground" />
+                </div>
               )}
             </div>
-          </div>
 
-          {/* Duration Badge */}
-          <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-background/80 backdrop-blur-sm text-xs font-medium">
-            0:{snippet.duration < 10 ? '0' : ''}{snippet.duration}
-          </div>
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-smooth" />
 
-          {/* Stats */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
-            <p className="text-sm font-medium line-clamp-1 text-foreground group-hover:text-primary transition-smooth">
-              {snippet.title}
-            </p>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Heart className="w-3 h-3" />
-                {snippet.likes}
-              </span>
-              <span className="flex items-center gap-1">
-                <Eye className="w-3 h-3" />
-                {snippet.views}
-              </span>
+            {/* Play Button Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth">
+              <div className="w-14 h-14 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center">
+                {snippet.media_type === 'youtube' ? (
+                  <Youtube className="w-6 h-6 text-primary-foreground" />
+                ) : isPlaying(snippet.id) ? (
+                  <div className="w-4 h-4 border-2 border-primary-foreground" />
+                ) : (
+                  <Play className="w-6 h-6 text-primary-foreground ml-1" fill="currentColor" />
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Pending Status Badge */}
-          {snippet.status !== 'approved' && (
-            <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-muted/90 backdrop-blur-sm text-xs font-medium">
-              {snippet.status === 'pending' ? 'Pending' : 'Rejected'}
+            {/* Duration Badge */}
+            <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-background/80 backdrop-blur-sm text-xs font-medium">
+              0:{snippet.duration < 10 ? '0' : ''}{snippet.duration}
+            </div>
+
+            {/* YouTube Badge */}
+            {snippet.media_type === 'youtube' && (
+              <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-red-500/90 backdrop-blur-sm text-xs font-medium text-white flex items-center gap-1">
+                <Youtube className="w-3 h-3" />
+                YouTube
+              </div>
+            )}
+
+            {/* Pending Status Badge - only show if not YouTube */}
+            {snippet.status !== 'approved' && snippet.media_type !== 'youtube' && (
+              <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-muted/90 backdrop-blur-sm text-xs font-medium">
+                {snippet.status === 'pending' ? 'Pending' : 'Rejected'}
+              </div>
+            )}
+
+            {/* Stats */}
+            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
+              <p className="text-sm font-medium line-clamp-1 text-foreground group-hover:text-primary transition-smooth">
+                {snippet.title}
+              </p>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Heart className="w-3 h-3" />
+                  {snippet.likes}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {snippet.views}
+                </span>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* YouTube Modal */}
+      <Dialog open={!!youtubeModal} onOpenChange={() => setYoutubeModal(null)}>
+        <DialogContent className="max-w-2xl p-0 overflow-hidden">
+          {youtubeModal && youtubeModal.youtube_video_id && (
+            <div className="p-4 space-y-4">
+              <h3 className="text-lg font-semibold">{youtubeModal.title}</h3>
+              <YouTubePlayer
+                videoId={youtubeModal.youtube_video_id}
+                startSeconds={youtubeModal.youtube_start_seconds || 0}
+                maxDuration={30}
+                autoPlay={true}
+              />
             </div>
           )}
-        </Card>
-      ))}
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

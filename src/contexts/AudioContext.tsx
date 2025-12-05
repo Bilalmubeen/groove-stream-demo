@@ -67,6 +67,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const play = useCallback(async (snippetId: string, audioUrl: string) => {
     if (!audioRef.current) return;
 
+    // Validate audioUrl - prevent playing null/empty URLs
+    if (!audioUrl || audioUrl.trim() === '') {
+      console.warn('Cannot play audio: No valid audio URL provided for snippet', snippetId);
+      return;
+    }
+
     // Request permission if not yet granted
     if (!hasAudioPermission) {
       await requestAudioPermission();
@@ -86,6 +92,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error playing audio:', error);
+      // Reset state on error
+      setCurrentlyPlaying(null);
     }
   }, [currentlyPlaying, hasAudioPermission, requestAudioPermission]);
 
