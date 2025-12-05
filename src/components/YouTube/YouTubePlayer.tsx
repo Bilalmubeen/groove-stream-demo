@@ -200,7 +200,7 @@ export function YouTubePlayer({
   };
 
   return (
-    <div className={cn('relative w-full aspect-video rounded-xl overflow-hidden bg-card', className)}>
+    <div className={cn('relative w-full aspect-video rounded-xl overflow-hidden bg-card', className)} style={{ aspectRatio: className?.includes('aspect-square') ? '1/1' : undefined }}>
       {/* YouTube iframe container */}
       <div 
         ref={containerRef} 
