@@ -107,16 +107,41 @@ export default function Search() {
           return;
         }
       } else {
-        // Regular search
+        // Regular search - search by title and genre
         tracksQuery = tracksQuery.or(`title.ilike.%${cleanQuery}%,genre.ilike.%${cleanQuery}%`);
       }
 
       const { data: tracksData } = await tracksQuery.limit(20);
+      
+      // Also search by artist name separately (Supabase can't filter on joined table in .or())
+      let artistTracks: any[] = [];
+      if (!isHashtag) {
+        const { data: artistData } = await supabase
+          .from("snippets")
+          .select(`
+            *,
+            artist_profiles!inner (
+              artist_name,
+              user_id
+            )
+          `)
+          .eq("status", "approved")
+          .ilike("artist_profiles.artist_name", `%${cleanQuery}%`)
+          .limit(20);
+        
+        artistTracks = artistData || [];
+      }
 
-      setTracks(tracksData?.map(s => ({
+      // Merge and deduplicate results
+      const allTracks = [...(tracksData || []), ...artistTracks];
+      const uniqueTracks = allTracks.filter((track, index, self) => 
+        index === self.findIndex(t => t.id === track.id)
+      );
+
+      setTracks(uniqueTracks.map(s => ({
         ...s,
         artist_name: s.artist_profiles.artist_name
-      })) || []);
+      })));
 
       // Don't search users/playlists for hashtag searches
       if (isHashtag) {
