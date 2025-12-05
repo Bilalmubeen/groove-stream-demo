@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { AudioEditor } from '@/components/Upload/AudioEditor';
 import { HashtagInput } from '@/components/Upload/HashtagInput';
-import { YouTubePlayer } from '@/components/YouTube/YouTubePlayer';
+import { LiteYouTubeEmbed } from '@/components/YouTube/LiteYouTubeEmbed';
 import { Upload as UploadIcon, Music, ArrowLeft, Youtube, Link } from 'lucide-react';
 import { toast } from 'sonner';
 import { extractYouTubeVideoId, isValidYouTubeUrl, getYouTubeThumbnail } from '@/lib/youtube';
@@ -301,10 +301,9 @@ export default function Upload() {
                 {youtubeVideoId && (
                   <div className="space-y-4">
                     <div className="rounded-lg overflow-hidden">
-                      <YouTubePlayer
+                      <LiteYouTubeEmbed
                         videoId={youtubeVideoId}
                         startSeconds={youtubeStartSeconds}
-                        maxDuration={30}
                       />
                     </div>
 
@@ -381,10 +380,9 @@ export default function Upload() {
           <CardContent className="space-y-4">
             {uploadType === 'youtube' && youtubeVideoId && (
               <div className="rounded-lg overflow-hidden mb-4">
-                <YouTubePlayer
+                <LiteYouTubeEmbed
                   videoId={youtubeVideoId}
                   startSeconds={youtubeStartSeconds}
-                  maxDuration={30}
                 />
               </div>
             )}
