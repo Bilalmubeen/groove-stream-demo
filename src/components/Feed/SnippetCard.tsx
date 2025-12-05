@@ -103,39 +103,29 @@ export function SnippetCard({
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        console.log('[SnippetCard] Intersection callback', { 
-          snippetId: snippet.id,
-          isIntersecting: entry.isIntersecting, 
-          intersectionRatio: entry.intersectionRatio,
-          hasPlayed,
-          audioUrl: snippet.audio_url,
-          currentlyPlaying: currentlyPlayingRef.current
-        });
+        const ratio = entry.intersectionRatio;
         
-        // Play when card becomes visible - ONLY if user has interacted AND nothing else is playing
-        const nothingPlaying = !currentlyPlayingRef.current;
-        if (entry.isIntersecting && snippet.audio_url && !hasPlayed && userHasInteractedRef.current && nothingPlaying) {
-          console.log('[SnippetCard] Triggering auto-play for', snippet.id);
-          hasPlayed = true;
-          // Small delay to ensure audio context is ready
-          setTimeout(() => {
+        // Only trigger play when card is mostly visible (>50%)
+        if (ratio >= 0.5 && snippet.audio_url && !hasPlayed && userHasInteractedRef.current) {
+          const nothingPlaying = !currentlyPlayingRef.current;
+          if (nothingPlaying) {
+            console.log('[SnippetCard] Auto-playing', snippet.id);
+            hasPlayed = true;
             playRef.current(snippet.id, snippet.audio_url!);
             trackEventRef.current(snippet.id, 'play_start');
-          }, 100);
-        } else if (entry.isIntersecting && snippet.audio_url && !userHasInteractedRef.current) {
-          console.log('[SnippetCard] Waiting for user interaction before auto-play', snippet.id);
-        } else if (entry.isIntersecting && snippet.audio_url && !nothingPlaying && currentlyPlayingRef.current !== snippet.id) {
-          console.log('[SnippetCard] Skipping auto-play - another snippet is playing', { snippetId: snippet.id, currentlyPlaying: currentlyPlayingRef.current });
-        } else if (!entry.isIntersecting && currentlyPlayingRef.current === snippet.id) {
-          // Pause when scrolled away
-          console.log('[SnippetCard] Triggering pause for', snippet.id);
+          }
+        }
+        
+        // Only pause when card is completely out of view (ratio = 0) AND this snippet is playing
+        if (ratio === 0 && currentlyPlayingRef.current === snippet.id) {
+          console.log('[SnippetCard] Card scrolled away, pausing', snippet.id);
           hasPlayed = false;
-          pauseRef.current();
+          pauseRef.current(true); // Force pause when scrolled away
         }
       },
       { 
-        threshold: [0, 0.25, 0.5],
-        rootMargin: '-80px 0px 0px 0px' // Account for fixed header
+        threshold: [0, 0.5], // Simplified: only care about visible/not-visible and >50%
+        rootMargin: '-80px 0px 0px 0px'
       }
     );
 
