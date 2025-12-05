@@ -111,25 +111,40 @@ export default function Search() {
         tracksQuery = tracksQuery.or(`title.ilike.%${cleanQuery}%,genre.ilike.%${cleanQuery}%`);
       }
 
-      const { data: tracksData } = await tracksQuery.limit(20);
+      const { data: tracksData, error: tracksError } = await tracksQuery.limit(20);
       
-      // Also search by artist name separately (Supabase can't filter on joined table in .or())
+      console.log('[Search] Title/genre search results:', tracksData?.length || 0, tracksError);
+      
+      // Also search by artist name separately
+      // Need to search artist_profiles first, then get their snippets
       let artistTracks: any[] = [];
       if (!isHashtag) {
-        const { data: artistData } = await supabase
-          .from("snippets")
-          .select(`
-            *,
-            artist_profiles!inner (
-              artist_name,
-              user_id
-            )
-          `)
-          .eq("status", "approved")
-          .ilike("artist_profiles.artist_name", `%${cleanQuery}%`)
-          .limit(20);
+        // Find artists matching the search query
+        const { data: matchingArtists } = await supabase
+          .from("artist_profiles")
+          .select("id")
+          .ilike("artist_name", `%${cleanQuery}%`);
         
-        artistTracks = artistData || [];
+        console.log('[Search] Matching artists:', matchingArtists?.length || 0);
+        
+        if (matchingArtists && matchingArtists.length > 0) {
+          const artistIds = matchingArtists.map(a => a.id);
+          const { data: artistData } = await supabase
+            .from("snippets")
+            .select(`
+              *,
+              artist_profiles!inner (
+                artist_name,
+                user_id
+              )
+            `)
+            .eq("status", "approved")
+            .in("artist_id", artistIds)
+            .limit(20);
+          
+          console.log('[Search] Artist tracks found:', artistData?.length || 0);
+          artistTracks = artistData || [];
+        }
       }
 
       // Merge and deduplicate results
@@ -137,6 +152,8 @@ export default function Search() {
       const uniqueTracks = allTracks.filter((track, index, self) => 
         index === self.findIndex(t => t.id === track.id)
       );
+      
+      console.log('[Search] Total unique tracks:', uniqueTracks.length);
 
       setTracks(uniqueTracks.map(s => ({
         ...s,
