@@ -69,7 +69,7 @@ export default function Search() {
         .from("snippets")
         .select(`
           *,
-          artist_profiles!inner (
+          artist_profiles!snippets_artist_id_fkey (
             artist_name,
             user_id
           )
@@ -133,7 +133,7 @@ export default function Search() {
             .from("snippets")
             .select(`
               *,
-              artist_profiles!inner (
+              artist_profiles!snippets_artist_id_fkey (
                 artist_name,
                 user_id
               )
