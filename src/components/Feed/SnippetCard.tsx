@@ -54,6 +54,19 @@ export function SnippetCard({
   const isYouTube = snippet.media_type === 'youtube';
   const isPlaying = !isYouTube && isAudioPlaying(snippet.id);
 
+  // Store callbacks in refs to avoid recreating observer
+  const playRef = useRef(play);
+  const pauseRef = useRef(pause);
+  const trackEventRef = useRef(trackEvent);
+  const currentlyPlayingRef = useRef(currentlyPlaying);
+  
+  useEffect(() => {
+    playRef.current = play;
+    pauseRef.current = pause;
+    trackEventRef.current = trackEvent;
+    currentlyPlayingRef.current = currentlyPlaying;
+  });
+
   const swipeHandlers = useSwipeable({
     onSwipedUp: () => {
       if (isMobile && cardRef.current) {
@@ -73,17 +86,20 @@ export function SnippetCard({
     if (!cardRef.current || isYouTube) return;
 
     const card = cardRef.current;
+    let hasPlayed = false;
 
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        // Play when visible and active
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && snippet.audio_url) {
-          play(snippet.id, snippet.audio_url);
-          trackEvent(snippet.id, 'play_start');
-        } else if (!entry.isIntersecting && currentlyPlaying === snippet.id) {
-          // Only pause when card is no longer visible at all
-          pause();
+        // Play when visible (50%+)
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && snippet.audio_url && !hasPlayed) {
+          hasPlayed = true;
+          playRef.current(snippet.id, snippet.audio_url);
+          trackEventRef.current(snippet.id, 'play_start');
+        } else if (!entry.isIntersecting && currentlyPlayingRef.current === snippet.id) {
+          // Pause when scrolled away
+          hasPlayed = false;
+          pauseRef.current();
         }
       },
       { threshold: [0, 0.5] }
@@ -91,7 +107,7 @@ export function SnippetCard({
 
     observer.observe(card);
     return () => observer.disconnect();
-  }, [snippet.id, snippet.audio_url, isYouTube, currentlyPlaying, play, pause, trackEvent]);
+  }, [snippet.id, snippet.audio_url, isYouTube]);
 
   const togglePlayPause = useCallback(() => {
     if (isYouTube || !snippet.audio_url) return;
