@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useRef, useCallback, useEff
 interface AudioContextType {
   currentlyPlaying: string | null;
   play: (snippetId: string, audioUrl: string) => Promise<void>;
-  pause: () => void;
+  pause: (force?: boolean) => void;
   isPlaying: (snippetId: string) => boolean;
   audioRef: React.RefObject<HTMLAudioElement>;
   requestAudioPermission: () => Promise<boolean>;
@@ -19,6 +19,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [userHasInteracted, setUserHasInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const unlockAttempted = useRef(false);
+  const playStartTimeRef = useRef<number>(0); // Track when audio started playing
 
   // Request audio permission on first user interaction
   const requestAudioPermission = useCallback(async () => {
@@ -128,6 +129,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
         console.log('[AudioContext] Audio src set, calling play()...');
         await audioRef.current.play();
         console.log('[AudioContext] play() succeeded, setting currentlyPlaying');
+        playStartTimeRef.current = Date.now(); // Mark play start time
         setCurrentlyPlaying(snippetId);
       }
     } catch (error) {
@@ -137,8 +139,14 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentlyPlaying, hasAudioPermission, requestAudioPermission]);
 
-  const pause = useCallback(() => {
-    console.log('[AudioContext] pause() called');
+  const pause = useCallback((force: boolean = false) => {
+    // Prevent pausing within 500ms of starting play (unless forced)
+    const timeSinceStart = Date.now() - playStartTimeRef.current;
+    if (!force && timeSinceStart < 500) {
+      console.log('[AudioContext] pause() blocked - audio just started', { timeSinceStart });
+      return;
+    }
+    console.log('[AudioContext] pause() called', { force, timeSinceStart });
     if (audioRef.current) {
       audioRef.current.pause();
     }
