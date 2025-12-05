@@ -8,6 +8,7 @@ interface AudioContextType {
   audioRef: React.RefObject<HTMLAudioElement>;
   requestAudioPermission: () => Promise<boolean>;
   hasAudioPermission: boolean;
+  userHasInteracted: boolean;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -15,6 +16,7 @@ const AudioContext = createContext<AudioContextType | undefined>(undefined);
 export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [hasAudioPermission, setHasAudioPermission] = useState(false);
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const unlockAttempted = useRef(false);
 
@@ -75,6 +77,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   // Auto-unlock on first user interaction
   useEffect(() => {
     const unlock = () => {
+      console.log('[AudioContext] User interaction detected, unlocking audio');
+      setUserHasInteracted(true);
       if (!unlockAttempted.current) {
         requestAudioPermission();
       }
@@ -164,7 +168,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       isPlaying, 
       audioRef,
       requestAudioPermission,
-      hasAudioPermission
+      hasAudioPermission,
+      userHasInteracted
     }}>
       {children}
       <audio ref={audioRef} preload="metadata" />

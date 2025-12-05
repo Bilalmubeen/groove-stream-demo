@@ -48,7 +48,7 @@ export function SnippetCard({
   const [addToPlaylistOpen, setAddToPlaylistOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { trackEvent } = useEngagement();
-  const { play, pause, isPlaying: isAudioPlaying, currentlyPlaying } = useAudio();
+  const { play, pause, isPlaying: isAudioPlaying, currentlyPlaying, userHasInteracted } = useAudio();
   const isMobile = useIsMobile();
   
   const isYouTube = snippet.media_type === 'youtube';
@@ -59,12 +59,14 @@ export function SnippetCard({
   const pauseRef = useRef(pause);
   const trackEventRef = useRef(trackEvent);
   const currentlyPlayingRef = useRef(currentlyPlaying);
+  const userHasInteractedRef = useRef(userHasInteracted);
   
   useEffect(() => {
     playRef.current = play;
     pauseRef.current = pause;
     trackEventRef.current = trackEvent;
     currentlyPlayingRef.current = currentlyPlaying;
+    userHasInteractedRef.current = userHasInteracted;
   });
 
   const swipeHandlers = useSwipeable({
@@ -110,15 +112,17 @@ export function SnippetCard({
           currentlyPlaying: currentlyPlayingRef.current
         });
         
-        // Play when card becomes visible - use isIntersecting instead of ratio
-        if (entry.isIntersecting && snippet.audio_url && !hasPlayed) {
-          console.log('[SnippetCard] Triggering play for', snippet.id);
+        // Play when card becomes visible - ONLY if user has interacted first
+        if (entry.isIntersecting && snippet.audio_url && !hasPlayed && userHasInteractedRef.current) {
+          console.log('[SnippetCard] Triggering auto-play for', snippet.id);
           hasPlayed = true;
           // Small delay to ensure audio context is ready
           setTimeout(() => {
             playRef.current(snippet.id, snippet.audio_url!);
             trackEventRef.current(snippet.id, 'play_start');
           }, 100);
+        } else if (entry.isIntersecting && snippet.audio_url && !userHasInteractedRef.current) {
+          console.log('[SnippetCard] Waiting for user interaction before auto-play', snippet.id);
         } else if (!entry.isIntersecting && currentlyPlayingRef.current === snippet.id) {
           // Pause when scrolled away
           console.log('[SnippetCard] Triggering pause for', snippet.id);
