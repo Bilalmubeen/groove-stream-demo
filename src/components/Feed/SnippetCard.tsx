@@ -112,8 +112,9 @@ export function SnippetCard({
           currentlyPlaying: currentlyPlayingRef.current
         });
         
-        // Play when card becomes visible - ONLY if user has interacted first
-        if (entry.isIntersecting && snippet.audio_url && !hasPlayed && userHasInteractedRef.current) {
+        // Play when card becomes visible - ONLY if user has interacted AND nothing else is playing
+        const nothingPlaying = !currentlyPlayingRef.current;
+        if (entry.isIntersecting && snippet.audio_url && !hasPlayed && userHasInteractedRef.current && nothingPlaying) {
           console.log('[SnippetCard] Triggering auto-play for', snippet.id);
           hasPlayed = true;
           // Small delay to ensure audio context is ready
@@ -123,6 +124,8 @@ export function SnippetCard({
           }, 100);
         } else if (entry.isIntersecting && snippet.audio_url && !userHasInteractedRef.current) {
           console.log('[SnippetCard] Waiting for user interaction before auto-play', snippet.id);
+        } else if (entry.isIntersecting && snippet.audio_url && !nothingPlaying && currentlyPlayingRef.current !== snippet.id) {
+          console.log('[SnippetCard] Skipping auto-play - another snippet is playing', { snippetId: snippet.id, currentlyPlaying: currentlyPlayingRef.current });
         } else if (!entry.isIntersecting && currentlyPlayingRef.current === snippet.id) {
           // Pause when scrolled away
           console.log('[SnippetCard] Triggering pause for', snippet.id);
