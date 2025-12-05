@@ -11,7 +11,6 @@ import { LikedSnippetsGrid } from '@/components/Profile/LikedSnippetsGrid';
 import { FavoritesSnippetsGrid } from '@/components/Profile/FavoritesSnippetsGrid';
 import { EditProfileDialog } from '@/components/Profile/EditProfileDialog';
 
-// Profile page component
 export default function Profile() {
   const { handle } = useParams();
   const navigate = useNavigate();
