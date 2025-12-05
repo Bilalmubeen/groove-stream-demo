@@ -9,6 +9,9 @@ interface AudioContextType {
   requestAudioPermission: () => Promise<boolean>;
   hasAudioPermission: boolean;
   userHasInteracted: boolean;
+  progress: number; // 0-100
+  currentTime: number;
+  duration: number;
 }
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
@@ -17,9 +20,12 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [hasAudioPermission, setHasAudioPermission] = useState(false);
   const [userHasInteracted, setUserHasInteracted] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const unlockAttempted = useRef(false);
-  const playStartTimeRef = useRef<number>(0); // Track when audio started playing
+  const playStartTimeRef = useRef<number>(0);
 
   // Request audio permission on first user interaction
   const requestAudioPermission = useCallback(async () => {
@@ -49,29 +55,36 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     return true;
   }, [hasAudioPermission]);
 
-  // Add audio event listeners for debugging
+  // Add audio event listeners for progress tracking
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const handleEnded = () => console.log('[AudioContext] Audio ended');
-    const handlePause = () => console.log('[AudioContext] Audio paused');
-    const handleError = (e: Event) => console.error('[AudioContext] Audio error:', e);
-    const handleCanPlay = () => console.log('[AudioContext] Audio can play');
-    const handleLoadStart = () => console.log('[AudioContext] Audio load start');
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+      if (audio.duration && !isNaN(audio.duration)) {
+        setProgress((audio.currentTime / audio.duration) * 100);
+      }
+    };
 
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+    };
+
+    const handleEnded = () => {
+      setProgress(0);
+      setCurrentTime(0);
+      setCurrentlyPlaying(null);
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('pause', handlePause);
-    audio.addEventListener('error', handleError);
-    audio.addEventListener('canplay', handleCanPlay);
-    audio.addEventListener('loadstart', handleLoadStart);
 
     return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('pause', handlePause);
-      audio.removeEventListener('error', handleError);
-      audio.removeEventListener('canplay', handleCanPlay);
-      audio.removeEventListener('loadstart', handleLoadStart);
     };
   }, []);
 
@@ -181,7 +194,10 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       audioRef,
       requestAudioPermission,
       hasAudioPermission,
-      userHasInteracted
+      userHasInteracted,
+      progress,
+      currentTime,
+      duration
     }}>
       {children}
       <audio ref={audioRef} preload="metadata" />

@@ -48,11 +48,19 @@ export function SnippetCard({
   const [addToPlaylistOpen, setAddToPlaylistOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const { trackEvent } = useEngagement();
-  const { play, pause, isPlaying: isAudioPlaying, currentlyPlaying, userHasInteracted } = useAudio();
+  const { play, pause, isPlaying: isAudioPlaying, currentlyPlaying, userHasInteracted, progress, currentTime, duration } = useAudio();
   const isMobile = useIsMobile();
   
   const isYouTube = snippet.media_type === 'youtube';
   const isPlaying = !isYouTube && isAudioPlaying(snippet.id);
+  const showProgress = currentlyPlaying === snippet.id;
+
+  // Format time as mm:ss
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Store callbacks in refs to avoid recreating observer
   const playRef = useRef(play);
@@ -211,6 +219,22 @@ export function SnippetCard({
             </Button>
           )}
         </div>
+
+        {/* Progress bar */}
+        {!isYouTube && snippet.audio_url && showProgress && (
+          <div className={cn("w-full mb-4", isMobile ? "max-w-[16rem]" : "max-w-[20rem]")}>
+            <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
+              <div 
+                className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-150"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1 text-xs text-muted-foreground">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+        )}
 
         <div className="text-center mb-6 md:mb-8 space-y-2">
           <h2 className={cn("font-bold text-foreground", isMobile ? "text-2xl" : "text-3xl")}>{snippet.title}</h2>
