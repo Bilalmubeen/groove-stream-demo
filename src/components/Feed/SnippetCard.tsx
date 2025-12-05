@@ -73,33 +73,25 @@ export function SnippetCard({
     if (!cardRef.current || isYouTube) return;
 
     const card = cardRef.current;
-    let isObserving = true;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (!isObserving) return;
         const entry = entries[0];
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && isActive && snippet.audio_url) {
+        // Play when visible and active
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && snippet.audio_url) {
           play(snippet.id, snippet.audio_url);
           trackEvent(snippet.id, 'play_start');
+        } else if (!entry.isIntersecting && currentlyPlaying === snippet.id) {
+          // Only pause when card is no longer visible at all
+          pause();
         }
       },
-      { threshold: 0.5 }
+      { threshold: [0, 0.5] }
     );
 
     observer.observe(card);
-    return () => {
-      isObserving = false;
-      observer.disconnect();
-    };
-  }, [snippet.id, snippet.audio_url, isYouTube]);
-
-  // Pause when card becomes inactive
-  useEffect(() => {
-    if (!isActive && currentlyPlaying === snippet.id && !isYouTube) {
-      pause();
-    }
-  }, [isActive, currentlyPlaying, snippet.id, isYouTube, pause]);
+    return () => observer.disconnect();
+  }, [snippet.id, snippet.audio_url, isYouTube, currentlyPlaying, play, pause, trackEvent]);
 
   const togglePlayPause = useCallback(() => {
     if (isYouTube || !snippet.audio_url) return;
