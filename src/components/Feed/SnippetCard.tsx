@@ -8,7 +8,6 @@ import { CommentsSheet } from "@/components/Comments/CommentsSheet";
 import { AddToPlaylistDialog } from "@/components/Playlist/AddToPlaylistDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSwipeable } from "react-swipeable";
-import { YouTubePlayer } from "@/components/YouTube/YouTubePlayer";
 
 interface SnippetCardProps {
   snippet: {
@@ -125,31 +124,19 @@ export function SnippetCard({
 
       <div className="relative z-10 w-full max-w-2xl mx-auto px-4 md:px-6 flex flex-col items-center">
         <div className="relative mb-6 md:mb-8">
-          {isYouTube && snippet.youtube_video_id ? (
-            <div className={cn("rounded-3xl overflow-hidden shadow-2xl aspect-square", isMobile ? "w-64 h-64" : "w-80 h-80")}>
-              <YouTubePlayer
-                videoId={snippet.youtube_video_id}
-                startSeconds={snippet.youtube_start_seconds || 0}
-                maxDuration={30}
-                autoPlay={isActive}
-                className="!aspect-square h-full"
-              />
-            </div>
-          ) : (
-            <>
-              <div className={cn("rounded-3xl overflow-hidden shadow-2xl animate-pulse-glow", isMobile ? "w-64 h-64" : "w-80 h-80")}>
-                {snippet.cover_image_url ? (
-                  <img src={snippet.cover_image_url} alt={snippet.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                    <Music className="w-32 h-32 text-primary-foreground opacity-50" />
-                  </div>
-                )}
+          <div className={cn("rounded-3xl overflow-hidden shadow-2xl animate-pulse-glow", isMobile ? "w-64 h-64" : "w-80 h-80")}>
+            {snippet.cover_image_url ? (
+              <img src={snippet.cover_image_url} alt={snippet.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <Music className="w-32 h-32 text-primary-foreground opacity-50" />
               </div>
-              <Button onClick={togglePlayPause} size={isMobile ? "default" : "lg"} className={cn("absolute rounded-full bg-primary/90 hover:bg-primary shadow-xl", isMobile ? "bottom-3 right-3 w-12 h-12" : "bottom-4 right-4 w-16 h-16")}>
-                {isPlaying ? <Pause className={isMobile ? "w-5 h-5" : "w-8 h-8"} /> : <Play className={cn(isMobile ? "w-5 h-5 ml-0.5" : "w-8 h-8 ml-1")} />}
-              </Button>
-            </>
+            )}
+          </div>
+          {!isYouTube && (
+            <Button onClick={togglePlayPause} size={isMobile ? "default" : "lg"} className={cn("absolute rounded-full bg-primary/90 hover:bg-primary shadow-xl", isMobile ? "bottom-3 right-3 w-12 h-12" : "bottom-4 right-4 w-16 h-16")}>
+              {isPlaying ? <Pause className={isMobile ? "w-5 h-5" : "w-8 h-8"} /> : <Play className={cn(isMobile ? "w-5 h-5 ml-0.5" : "w-8 h-8 ml-1")} />}
+            </Button>
           )}
         </div>
 

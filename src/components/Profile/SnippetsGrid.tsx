@@ -1,26 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
-import { Play, Heart, Eye, Upload, Music, MoreVertical, Trash2 } from 'lucide-react';
+import { Play, Heart, Eye, Upload, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAudio } from '@/contexts/AudioContext';
-import { toast } from 'sonner';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 interface Snippet {
   id: string;
@@ -42,8 +25,6 @@ interface SnippetsGridProps {
 export function SnippetsGrid({ userId, isOwnProfile, onUploadClick }: SnippetsGridProps) {
   const [snippets, setSnippets] = useState<Snippet[]>([]);
   const [loading, setLoading] = useState(true);
-  const [deleteSnippet, setDeleteSnippet] = useState<Snippet | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
   const { play, pause, isPlaying } = useAudio();
 
   useEffect(() => {
@@ -89,29 +70,6 @@ export function SnippetsGrid({ userId, isOwnProfile, onUploadClick }: SnippetsGr
     }
   };
 
-  const handleDeleteSnippet = async () => {
-    if (!deleteSnippet) return;
-    
-    try {
-      setIsDeleting(true);
-      const { error } = await supabase
-        .from('snippets')
-        .delete()
-        .eq('id', deleteSnippet.id);
-
-      if (error) throw error;
-
-      setSnippets(prev => prev.filter(s => s.id !== deleteSnippet.id));
-      toast.success('Snippet deleted successfully');
-    } catch (error: any) {
-      console.error('Error deleting snippet:', error);
-      toast.error(error.message || 'Failed to delete snippet');
-    } finally {
-      setIsDeleting(false);
-      setDeleteSnippet(null);
-    }
-  };
-
   if (loading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -147,124 +105,72 @@ export function SnippetsGrid({ userId, isOwnProfile, onUploadClick }: SnippetsGr
   }
 
   return (
-    <>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-        {snippets.map((snippet) => (
-          <Card
-            key={snippet.id}
-            className="group relative aspect-square overflow-hidden cursor-pointer hover:scale-105 transition-smooth border-2 border-transparent hover:border-primary/50"
-            onClick={() => handlePlayPause(snippet)}
-          >
-            {/* Cover Image */}
-            <div className="absolute inset-0">
-              {snippet.cover_image_url ? (
-                <img
-                  src={snippet.cover_image_url}
-                  alt={snippet.title}
-                  className="w-full h-full object-cover"
-                />
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+      {snippets.map((snippet) => (
+        <Card
+          key={snippet.id}
+          className="group relative aspect-square overflow-hidden cursor-pointer hover:scale-105 transition-smooth border-2 border-transparent hover:border-primary/50"
+          onClick={() => handlePlayPause(snippet)}
+        >
+          {/* Cover Image */}
+          <div className="absolute inset-0">
+            {snippet.cover_image_url ? (
+              <img
+                src={snippet.cover_image_url}
+                alt={snippet.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
+                <Music className="w-12 h-12 text-muted-foreground" />
+              </div>
+            )}
+          </div>
+
+          {/* Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-smooth" />
+
+          {/* Play Button Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth">
+            <div className="w-14 h-14 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center">
+              {isPlaying(snippet.id) ? (
+                <div className="w-4 h-4 border-2 border-primary-foreground" />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
-                  <Music className="w-12 h-12 text-muted-foreground" />
-                </div>
+                <Play className="w-6 h-6 text-primary-foreground ml-1" fill="currentColor" />
               )}
             </div>
+          </div>
 
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-smooth" />
+          {/* Duration Badge */}
+          <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-background/80 backdrop-blur-sm text-xs font-medium">
+            0:{snippet.duration < 10 ? '0' : ''}{snippet.duration}
+          </div>
 
-            {/* Play Button Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-smooth">
-              <div className="w-14 h-14 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center">
-                {isPlaying(snippet.id) ? (
-                  <div className="w-4 h-4 border-2 border-primary-foreground" />
-                ) : (
-                  <Play className="w-6 h-6 text-primary-foreground ml-1" fill="currentColor" />
-                )}
-              </div>
+          {/* Stats */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
+            <p className="text-sm font-medium line-clamp-1 text-foreground group-hover:text-primary transition-smooth">
+              {snippet.title}
+            </p>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Heart className="w-3 h-3" />
+                {snippet.likes}
+              </span>
+              <span className="flex items-center gap-1">
+                <Eye className="w-3 h-3" />
+                {snippet.views}
+              </span>
             </div>
+          </div>
 
-            {/* Duration Badge */}
-            <div className="absolute top-2 right-2 px-2 py-1 rounded-md bg-background/80 backdrop-blur-sm text-xs font-medium">
-              0:{snippet.duration < 10 ? '0' : ''}{snippet.duration}
+          {/* Pending Status Badge */}
+          {snippet.status !== 'approved' && (
+            <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-muted/90 backdrop-blur-sm text-xs font-medium">
+              {snippet.status === 'pending' ? 'Pending' : 'Rejected'}
             </div>
-
-            {/* More Options Menu - Only for own profile */}
-            {isOwnProfile && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 left-2 h-7 w-7 bg-background/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-smooth"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
-                  <DropdownMenuItem
-                    className="text-destructive focus:text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteSnippet(snippet);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-
-            {/* Stats */}
-            <div className="absolute bottom-0 left-0 right-0 p-3 space-y-1">
-              <p className="text-sm font-medium line-clamp-1 text-foreground group-hover:text-primary transition-smooth">
-                {snippet.title}
-              </p>
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <Heart className="w-3 h-3" />
-                  {snippet.likes}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Eye className="w-3 h-3" />
-                  {snippet.views}
-                </span>
-              </div>
-            </div>
-
-            {/* Pending Status Badge */}
-            {snippet.status !== 'approved' && (
-              <div className="absolute top-2 left-10 px-2 py-1 rounded-md bg-muted/90 backdrop-blur-sm text-xs font-medium">
-                {snippet.status === 'pending' ? 'Pending' : 'Rejected'}
-              </div>
-            )}
-          </Card>
-        ))}
-      </div>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteSnippet} onOpenChange={(open) => !open && setDeleteSnippet(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete snippet?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{deleteSnippet?.title}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteSnippet}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+          )}
+        </Card>
+      ))}
+    </div>
   );
 }
