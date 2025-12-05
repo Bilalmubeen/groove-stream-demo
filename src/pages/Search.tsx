@@ -44,13 +44,16 @@ export default function Search() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Update URL params
+  // Update URL params - use timeout to prevent race conditions with navigation
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (query) params.set("q", query);
-    if (activeTab !== "tracks") params.set("tab", activeTab);
-    setSearchParams(params, { replace: true });
-  }, [query, activeTab]);
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams();
+      if (query) params.set("q", query);
+      if (activeTab !== "tracks") params.set("tab", activeTab);
+      setSearchParams(params, { replace: true });
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [query, activeTab, setSearchParams]);
 
   // Search when debounced query changes
   useEffect(() => {

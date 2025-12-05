@@ -30,7 +30,7 @@ interface Message {
   sender_id: string;
   read: boolean;
   created_at: string;
-  profiles: {
+  profiles?: {
     username: string;
     avatar_url: string;
   };
@@ -335,8 +335,8 @@ export default function Messages() {
                 className={`flex gap-3 ${message.sender_id === currentUserId ? 'flex-row-reverse' : ''}`}
               >
                 <Avatar className="w-8 h-8 flex-shrink-0">
-                  <AvatarImage src={message.profiles.avatar_url} />
-                  <AvatarFallback>{message.profiles.username[0]?.toUpperCase()}</AvatarFallback>
+                  <AvatarImage src={message.profiles?.avatar_url} />
+                  <AvatarFallback>{message.profiles?.username?.[0]?.toUpperCase() || '?'}</AvatarFallback>
                 </Avatar>
                 <div className={`flex flex-col ${message.sender_id === currentUserId ? 'items-end' : 'items-start'}`}>
                   <div
