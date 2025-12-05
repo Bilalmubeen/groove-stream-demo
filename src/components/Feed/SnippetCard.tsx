@@ -126,13 +126,12 @@ export function SnippetCard({
       <div className="relative z-10 w-full max-w-2xl mx-auto px-4 md:px-6 flex flex-col items-center">
         <div className="relative mb-6 md:mb-8">
           {isYouTube && snippet.youtube_video_id ? (
-            <div className={cn("rounded-3xl overflow-hidden shadow-2xl", isMobile ? "w-64" : "w-80")}>
+            <div className={cn("rounded-3xl overflow-hidden shadow-2xl", isMobile ? "w-full max-w-sm" : "w-full max-w-lg")}>
               <YouTubePlayer
                 videoId={snippet.youtube_video_id}
                 startSeconds={snippet.youtube_start_seconds || 0}
                 maxDuration={30}
                 autoPlay={isActive}
-                className="aspect-video"
               />
             </div>
           ) : (
