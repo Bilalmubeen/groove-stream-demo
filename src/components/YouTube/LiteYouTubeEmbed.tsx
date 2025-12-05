@@ -12,7 +12,7 @@ export function LiteYouTubeEmbed({ videoId, startSeconds = 0, className }: LiteY
   const [showVideo, setShowVideo] = useState(false);
   
   const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&start=${startSeconds}&rel=0&modestbranding=1`;
+  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&start=${startSeconds}&rel=0&modestbranding=1&controls=0`;
 
   if (showVideo) {
     return (
