@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Pause } from 'lucide-react';
+import { Play, Pause, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
@@ -222,6 +222,14 @@ export function YouTubePlayer({
 
   return (
     <div className={cn('relative w-full aspect-video rounded-xl overflow-hidden bg-card', className)}>
+      {/* Loading spinner */}
+      {!isReady && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20">
+          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+          <span className="mt-2 text-sm text-white/80">Loading video...</span>
+        </div>
+      )}
+
       {/* YouTube iframe container */}
       <div 
         ref={containerRef} 
