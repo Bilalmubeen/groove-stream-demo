@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,6 @@ import { useAudio } from "@/contexts/AudioContext";
 
 export default function Search() {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") || "");
   const [debouncedQuery, setDebouncedQuery] = useState(query);
@@ -23,19 +22,6 @@ export default function Search() {
   const { play } = useAudio();
   const [isHashtagSearch, setIsHashtagSearch] = useState(false);
 
-  // Defensive URL cleanup - handle malformed URLs with encoded query params in path
-  useEffect(() => {
-    if (location.pathname.includes('%3F') || location.pathname.includes('%26')) {
-      const cleanPath = decodeURIComponent(location.pathname);
-      const parts = cleanPath.split('?');
-      if (parts.length > 1) {
-        navigate(`/search?${parts[1]}`, { replace: true });
-      } else {
-        navigate('/search', { replace: true });
-      }
-    }
-  }, [location.pathname, navigate]);
-
   // Debounce search query
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -44,16 +30,19 @@ export default function Search() {
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Update URL params - use timeout to prevent race conditions with navigation
+  // Update URL params when tab changes (not query - that causes race conditions)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const params = new URLSearchParams();
-      if (query) params.set("q", query);
-      if (activeTab !== "tracks") params.set("tab", activeTab);
+    const params = new URLSearchParams(searchParams);
+    if (activeTab !== "tracks") {
+      params.set("tab", activeTab);
+    } else {
+      params.delete("tab");
+    }
+    // Only update if tab changed
+    if (params.get("tab") !== searchParams.get("tab")) {
       setSearchParams(params, { replace: true });
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [query, activeTab, setSearchParams]);
+    }
+  }, [activeTab]);
 
   // Search when debounced query changes
   useEffect(() => {
