@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useRef, useCallback, useEff
 interface AudioContextType {
   currentlyPlaying: string | null;
   play: (snippetId: string, audioUrl: string) => Promise<void>;
-  pause: (force?: boolean) => void;
+  pause: (force?: boolean, clearState?: boolean) => void;
   isPlaying: (snippetId: string) => boolean;
   audioRef: React.RefObject<HTMLAudioElement>;
   requestAudioPermission: () => Promise<boolean>;
@@ -139,16 +139,20 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentlyPlaying, hasAudioPermission, requestAudioPermission]);
 
-  const pause = useCallback((force: boolean = false) => {
+  const pause = useCallback((force: boolean = false, clearState: boolean = true) => {
     // Prevent pausing within 500ms of starting play (unless forced)
     const timeSinceStart = Date.now() - playStartTimeRef.current;
     if (!force && timeSinceStart < 500) {
       console.log('[AudioContext] pause() blocked - audio just started', { timeSinceStart });
       return;
     }
-    console.log('[AudioContext] pause() called', { force, timeSinceStart });
+    console.log('[AudioContext] pause() called', { force, timeSinceStart, clearState });
     if (audioRef.current) {
       audioRef.current.pause();
+    }
+    // Clear currentlyPlaying so auto-play can work on next visible card
+    if (clearState) {
+      setCurrentlyPlaying(null);
     }
   }, []);
 
