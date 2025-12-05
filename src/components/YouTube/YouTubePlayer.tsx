@@ -62,10 +62,16 @@ export function YouTubePlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const intervalRef = useRef<number | null>(null);
+  const autoPlayRef = useRef(autoPlay);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
+
+  // Keep autoPlayRef in sync
+  useEffect(() => {
+    autoPlayRef.current = autoPlay;
+  }, [autoPlay]);
 
   const endSeconds = startSeconds + maxDuration;
   const progress = (currentTime / maxDuration) * 100;
@@ -129,19 +135,19 @@ export function YouTubePlayer({
         videoId,
         playerVars: {
           start: startSeconds,
-          autoplay: autoPlay ? 1 : 0,
-          controls: 0, // Disable native controls
+          autoplay: autoPlayRef.current ? 1 : 0,
+          controls: 0,
           modestbranding: 1,
           rel: 0,
           showinfo: 0,
-          fs: 0, // Disable fullscreen
-          disablekb: 1, // Disable keyboard controls
+          fs: 0,
+          disablekb: 1,
           playsinline: 1,
         },
         events: {
           onReady: () => {
             setIsReady(true);
-            if (autoPlay) {
+            if (autoPlayRef.current) {
               setIsPlaying(true);
               startTimeTracking();
             }
@@ -175,7 +181,22 @@ export function YouTubePlayer({
         }
       }
     };
-  }, [videoId, startSeconds, autoPlay]);
+  }, [videoId, startSeconds]);
+
+  // Handle autoPlay changes without recreating the player
+  useEffect(() => {
+    if (!isReady || !playerRef.current) return;
+    
+    try {
+      if (autoPlay && !isPlaying) {
+        playerRef.current.playVideo();
+      } else if (!autoPlay && isPlaying) {
+        playerRef.current.pauseVideo();
+      }
+    } catch (e) {
+      // Player might not be ready
+    }
+  }, [autoPlay, isReady]);
 
   const togglePlayPause = useCallback(() => {
     if (!playerRef.current || !isReady) return;
