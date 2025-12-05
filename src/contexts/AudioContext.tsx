@@ -23,6 +23,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [isAudioPaused, setIsAudioPaused] = useState(true);
   const audioRef = useRef<HTMLAudioElement>(null);
   const unlockAttempted = useRef(false);
   const playStartTimeRef = useRef<number>(0);
@@ -55,7 +56,7 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
     return true;
   }, [hasAudioPermission]);
 
-  // Add audio event listeners for progress tracking
+  // Add audio event listeners for progress tracking and play state
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -75,16 +76,29 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
       setProgress(0);
       setCurrentTime(0);
       setCurrentlyPlaying(null);
+      setIsAudioPaused(true);
+    };
+
+    const handlePlay = () => {
+      setIsAudioPaused(false);
+    };
+
+    const handlePause = () => {
+      setIsAudioPaused(true);
     };
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
     };
   }, []);
 
@@ -170,8 +184,8 @@ export function AudioProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const isPlaying = useCallback((snippetId: string) => {
-    return currentlyPlaying === snippetId && !audioRef.current?.paused;
-  }, [currentlyPlaying]);
+    return currentlyPlaying === snippetId && !isAudioPaused;
+  }, [currentlyPlaying, isAudioPaused]);
 
   // Pause on tab blur
   useEffect(() => {
