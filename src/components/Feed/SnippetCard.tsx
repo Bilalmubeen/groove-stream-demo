@@ -110,12 +110,15 @@ export function SnippetCard({
           currentlyPlaying: currentlyPlayingRef.current
         });
         
-        // Play when visible (50%+)
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.5 && snippet.audio_url && !hasPlayed) {
+        // Play when card becomes visible - use isIntersecting instead of ratio
+        if (entry.isIntersecting && snippet.audio_url && !hasPlayed) {
           console.log('[SnippetCard] Triggering play for', snippet.id);
           hasPlayed = true;
-          playRef.current(snippet.id, snippet.audio_url);
-          trackEventRef.current(snippet.id, 'play_start');
+          // Small delay to ensure audio context is ready
+          setTimeout(() => {
+            playRef.current(snippet.id, snippet.audio_url!);
+            trackEventRef.current(snippet.id, 'play_start');
+          }, 100);
         } else if (!entry.isIntersecting && currentlyPlayingRef.current === snippet.id) {
           // Pause when scrolled away
           console.log('[SnippetCard] Triggering pause for', snippet.id);
@@ -123,7 +126,10 @@ export function SnippetCard({
           pauseRef.current();
         }
       },
-      { threshold: [0, 0.5] }
+      { 
+        threshold: [0, 0.25, 0.5],
+        rootMargin: '-80px 0px 0px 0px' // Account for fixed header
+      }
     );
 
     observer.observe(card);
@@ -135,13 +141,25 @@ export function SnippetCard({
   }, [snippet.id, snippet.audio_url, isYouTube]);
 
   const togglePlayPause = useCallback(() => {
-    if (isYouTube || !snippet.audio_url) return;
+    console.log('[SnippetCard] togglePlayPause clicked', {
+      snippetId: snippet.id,
+      isYouTube,
+      audioUrl: snippet.audio_url,
+      isPlaying,
+      currentlyPlaying
+    });
+    if (isYouTube || !snippet.audio_url) {
+      console.log('[SnippetCard] Skipping - isYouTube or no audio_url');
+      return;
+    }
     if (isPlaying) {
+      console.log('[SnippetCard] Pausing...');
       pause();
     } else {
+      console.log('[SnippetCard] Playing...');
       play(snippet.id, snippet.audio_url);
     }
-  }, [isPlaying, snippet.id, snippet.audio_url, isYouTube]);
+  }, [isPlaying, snippet.id, snippet.audio_url, isYouTube, currentlyPlaying, play, pause]);
 
   const handleCTAClick = useCallback(() => {
     if (snippet.cta_url) {
