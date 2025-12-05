@@ -188,18 +188,17 @@ export function YouTubePlayer({
     };
   }, [videoId, startSeconds]);
 
-  // Handle autoPlay changes without recreating the player
+  // Handle autoPlay changes - only auto-start, never auto-pause
   useEffect(() => {
     if (!isReady || !playerRef.current) return;
     
-    try {
-      if (autoPlay && !isPlayingRef.current) {
+    // Only auto-play when autoPlay becomes true, don't auto-pause
+    if (autoPlay && !isPlayingRef.current) {
+      try {
         playerRef.current.playVideo();
-      } else if (!autoPlay && isPlayingRef.current) {
-        playerRef.current.pauseVideo();
+      } catch (e) {
+        // Player might not be ready
       }
-    } catch (e) {
-      // Player might not be ready
     }
   }, [autoPlay, isReady]);
 
